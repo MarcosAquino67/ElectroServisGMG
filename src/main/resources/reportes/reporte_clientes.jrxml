@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" name="reporte_clientes" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <queryString><![CDATA[SELECT idCliente, nombre, apellido, cedula, telefono, email FROM cliente ORDER BY nombre]]></queryString>
+    <field name="idCliente" class="java.lang.Integer"/>
+    <field name="nombre" class="java.lang.String"/>
+    <field name="apellido" class="java.lang.String"/>
+    <field name="cedula" class="java.lang.String"/>
+    <field name="telefono" class="java.lang.String"/>
+    <field name="email" class="java.lang.String"/>
+    <title>
+        <band height="40">
+            <staticText><reportElement x="0" y="0" width="555" height="30"/><textElement textAlignment="Center"><font size="14" isBold="true"/></textElement><text><![CDATA[ELECTROSERVIS G.M.G - Reporte de Clientes]]></text></staticText>
+        </band>
+    </title>
+    <columnHeader>
+        <band height="20">
+            <staticText><reportElement forecolor="#FFFFFF" x="0" y="0" width="40" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement textAlignment="Center"><font isBold="true" size="9"/></textElement><text><![CDATA[ID]]></text></staticText>
+            <staticText><reportElement forecolor="#FFFFFF" x="40" y="0" width="130" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement><font isBold="true" size="9"/></textElement><text><![CDATA[Nombre]]></text></staticText>
+            <staticText><reportElement forecolor="#FFFFFF" x="170" y="0" width="130" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement><font isBold="true" size="9"/></textElement><text><![CDATA[Apellido]]></text></staticText>
+            <staticText><reportElement forecolor="#FFFFFF" x="300" y="0" width="90" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement><font isBold="true" size="9"/></textElement><text><![CDATA[Telefono]]></text></staticText>
+            <staticText><reportElement forecolor="#FFFFFF" x="390" y="0" width="165" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement><font isBold="true" size="9"/></textElement><text><![CDATA[Email]]></text></staticText>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="20">
+            <textField><reportElement x="0" y="0" width="40" height="20"/><textElement textAlignment="Center"/><textFieldExpression><![CDATA[$F{idCliente}]]></textFieldExpression></textField>
+            <textField><reportElement x="40" y="0" width="130" height="20"/><textFieldExpression><![CDATA[$F{nombre}]]></textFieldExpression></textField>
+            <textField><reportElement x="170" y="0" width="130" height="20"/><textFieldExpression><![CDATA[$F{apellido}]]></textFieldExpression></textField>
+            <textField><reportElement x="300" y="0" width="90" height="20"/><textFieldExpression><![CDATA[$F{telefono}]]></textFieldExpression></textField>
+            <textField><reportElement x="390" y="0" width="165" height="20"/><textFieldExpression><![CDATA[$F{email}]]></textFieldExpression></textField>
+        </band>
+    </detail>
+</jasperReport>

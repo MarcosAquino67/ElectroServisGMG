@@ -1,0 +1,10 @@
+target/
+*.class
+tema.cfg
+imagenes_productos/
+respaldo_formularios/
+nbproject/private/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db

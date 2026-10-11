@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" name="reporte_ventas" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+    <queryString><![CDATA[SELECT v.idVenta, CONCAT(c.nombre,' ',c.apellido) AS cliente, v.fechaVenta, v.total, v.formaPago FROM venta v LEFT JOIN cliente c ON c.idCliente = v.idCliente ORDER BY v.fechaVenta DESC]]></queryString>
+    <field name="idVenta" class="java.lang.Integer"/>
+    <field name="cliente" class="java.lang.String"/>
+    <field name="fechaVenta" class="java.sql.Date"/>
+    <field name="total" class="java.lang.Double"/>
+    <field name="formaPago" class="java.lang.String"/>
+    <variable name="totalSum" class="java.lang.Double" calculation="Sum">
+        <variableExpression><![CDATA[$F{total}]]></variableExpression>
+    </variable>
+    <title>
+        <band height="40">
+            <staticText><reportElement x="0" y="0" width="555" height="30"/><textElement textAlignment="Center"><font size="14" isBold="true"/></textElement><text><![CDATA[ELECTROSERVIS G.M.G - Reporte de Ventas]]></text></staticText>
+        </band>
+    </title>
+    <columnHeader>
+        <band height="20">
+            <staticText><reportElement forecolor="#FFFFFF" x="0" y="0" width="60" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement textAlignment="Center"><font isBold="true" size="9"/></textElement><text><![CDATA[ID]]></text></staticText>
+            <staticText><reportElement forecolor="#FFFFFF" x="60" y="0" width="200" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement><font isBold="true" size="9"/></textElement><text><![CDATA[Cliente]]></text></staticText>
+            <staticText><reportElement forecolor="#FFFFFF" x="260" y="0" width="115" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement textAlignment="Center"><font isBold="true" size="9"/></textElement><text><![CDATA[Fecha]]></text></staticText>
+            <staticText><reportElement forecolor="#FFFFFF" x="375" y="0" width="90" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement textAlignment="Center"><font isBold="true" size="9"/></textElement><text><![CDATA[Pago]]></text></staticText>
+            <staticText><reportElement forecolor="#FFFFFF" x="465" y="0" width="90" height="20" mode="Opaque" backcolor="#2C3E50"/><textElement textAlignment="Right"><font isBold="true" size="9"/></textElement><text><![CDATA[Total]]></text></staticText>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="20">
+            <textField><reportElement x="0" y="0" width="60" height="20"/><textElement textAlignment="Center"/><textFieldExpression><![CDATA[$F{idVenta}]]></textFieldExpression></textField>
+            <textField><reportElement x="60" y="0" width="200" height="20"/><textFieldExpression><![CDATA[$F{cliente}]]></textFieldExpression></textField>
+            <textField pattern="yyyy-MM-dd"><reportElement x="260" y="0" width="115" height="20"/><textElement textAlignment="Center"/><textFieldExpression><![CDATA[$F{fechaVenta}]]></textFieldExpression></textField>
+            <textField><reportElement x="375" y="0" width="90" height="20"/><textElement textAlignment="Center"/><textFieldExpression><![CDATA[$F{formaPago}]]></textFieldExpression></textField>
+            <textField pattern="#,##0.00"><reportElement x="465" y="0" width="90" height="20"/><textElement textAlignment="Right"/><textFieldExpression><![CDATA[$F{total}]]></textFieldExpression></textField>
+        </band>
+    </detail>
+    <summary>
+        <band height="30">
+            <staticText><reportElement x="375" y="5" width="90" height="20"/><textElement textAlignment="Center"><font isBold="true"/></textElement><text><![CDATA[TOTAL:]]></text></staticText>
+            <textField pattern="#,##0.00"><reportElement x="465" y="5" width="90" height="20"/><textElement textAlignment="Right"><font isBold="true" size="12"/></textElement><textFieldExpression><![CDATA[$V{totalSum} == null ? 0.0 : $V{totalSum}]]></textFieldExpression></textField>
+        </band>
+    </summary>
+</jasperReport>
