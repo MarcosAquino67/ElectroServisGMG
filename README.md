@@ -257,6 +257,6 @@ Cosas que quedaron para más adelante (sirven para seguir practicando):
 ## 👨‍🎓 Autores
 
 - **Marcos Aquino**
-- **Matías** — *(completá tu apellido 😄)*
+- **Matías Bogado**
 
 Proyecto de laboratorio — **3º año de BTI — 2026**
