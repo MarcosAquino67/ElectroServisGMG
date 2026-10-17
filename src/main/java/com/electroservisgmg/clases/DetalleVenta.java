@@ -6,6 +6,9 @@ public class DetalleVenta {
     private int idProducto;
     private int cantidad;
     private double precioUnitario;
+    private double descuento;
+    /** Tasa de IVA (%) copiada del producto al momento de la venta. */
+    private double iva = 10;
     private double subtotal;
 
     public DetalleVenta() {}
@@ -18,6 +21,11 @@ public class DetalleVenta {
         this.precioUnitario = precioUnitario;
         this.subtotal = subtotal;
     }
+
+    public double getDescuento() { return descuento; }
+    public void setDescuento(double descuento) { this.descuento = descuento; }
+    public double getIva() { return iva; }
+    public void setIva(double iva) { this.iva = iva; }
 
     public int getIdDetalleVenta() { return idDetalleVenta; }
     public void setIdDetalleVenta(int idDetalleVenta) { this.idDetalleVenta = idDetalleVenta; }

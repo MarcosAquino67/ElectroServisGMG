@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Etiquetas de productos.
+  Hoja A4 (595 x 842 pt) con 24 etiquetas de 66 x 34 mm (3 columnas x 8 filas),
+  sin separacion entre etiquetas, para imprimir en hoja de etiquetas o en papel
+  comun y recortar.
+
+  Cada etiqueta lleva: nombre de la empresa, nombre del producto, precio,
+  codigo de barras EAN-13 y el numero del codigo.
+
+  El dibujo del codigo de barras lo hace com.electroservisgmg.metodos.CodigoBarras
+  (no usa librerias externas). Si el producto no tiene un EAN-13 valido, la
+  etiqueta sale sin codigo y el resto se imprime igual.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" name="etiquetas_productos"
+              pageWidth="595" pageHeight="842"
+              columnCount="3" columnWidth="187" columnSpacing="0"
+              leftMargin="17" rightMargin="17" topMargin="34" bottomMargin="33"
+              whenNoDataType="AllSectionsNoDetail">
+
+    <parameter name="empresa" class="java.lang.String"/>
+    <field name="nombre" class="java.lang.String"/>
+    <field name="precio" class="java.lang.String"/>
+    <field name="codigoBarras" class="java.lang.String"/>
+
+    <background>
+        <band height="0"/>
+    </background>
+    <title>
+        <band height="0"/>
+    </title>
+    <pageHeader>
+        <band height="0"/>
+    </pageHeader>
+    <columnHeader>
+        <band height="0"/>
+    </columnHeader>
+
+    <!-- ============ una etiqueta (96 pt de alto) ============ -->
+    <detail>
+        <band height="96">
+
+            <!-- linea de corte -->
+            <line>
+                <reportElement x="0" y="95" width="187" height="1" forecolor="#D8DEE9"/>
+            </line>
+
+            <!-- empresa -->
+            <textField>
+                <reportElement x="0" y="3" width="187" height="9" forecolor="#7A8699"/>
+                <textElement textAlignment="Center">
+                    <font size="6" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{empresa}]]></textFieldExpression>
+            </textField>
+
+            <!-- nombre del producto -->
+            <textField textAdjust="CutText">
+                <reportElement x="4" y="12" width="179" height="12"/>
+                <textElement textAlignment="Center">
+                    <font size="8" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{nombre}]]></textFieldExpression>
+            </textField>
+
+            <!-- precio -->
+            <textField>
+                <reportElement x="0" y="25" width="187" height="13"/>
+                <textElement textAlignment="Center">
+                    <font size="9" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{precio}]]></textFieldExpression>
+            </textField>
+
+            <!-- codigo de barras -->
+            <image hAlign="Center" vAlign="Middle" scaleImage="RetainShape" onErrorType="Blank">
+                <reportElement x="13" y="38" width="161" height="43"/>
+                <imageExpression class="java.awt.Image"><![CDATA[com.electroservisgmg.metodos.CodigoBarras.dibujar($F{codigoBarras}, 4, 80, false)]]></imageExpression>
+            </image>
+
+            <!-- numero del codigo de barras -->
+            <textField>
+                <reportElement x="0" y="82" width="187" height="11"/>
+                <textElement textAlignment="Center">
+                    <font fontName="Monospaced" size="7"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{codigoBarras}]]></textFieldExpression>
+            </textField>
+
+        </band>
+    </detail>
+
+    <columnFooter>
+        <band height="0"/>
+    </columnFooter>
+    <pageFooter>
+        <band height="0"/>
+    </pageFooter>
+    <summary>
+        <band height="0"/>
+    </summary>
+</jasperReport>

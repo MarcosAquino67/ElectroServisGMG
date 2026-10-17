@@ -1,5 +1,5 @@
 -- Usuario inicial para ElectroServis G.M.G
-USE electroservis_db;
+USE electroservis_app;
 
 -- Crear tabla si no existe
 CREATE TABLE IF NOT EXISTS usuario (

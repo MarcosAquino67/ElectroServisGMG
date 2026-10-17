@@ -74,11 +74,54 @@ public class CompraMetodos {
         return lista;
     }
 
-    public boolean anular(int idCompra) {
-        String sql = "UPDATE compra SET estado='ANULADA' WHERE idCompra=?";
-        try (Connection con = Conexion.nuevaConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+    /** Detalle (renglones) de una compra. */
+    public List<DetalleCompra> listarDetalles(int idCompra) {
+        List<DetalleCompra> lista = new ArrayList<>();
+        String sql = "SELECT idDetalleCompra, idProducto, cantidad, precioUnitario, subtotal "
+                + "FROM detallecompra WHERE idCompra=? ORDER BY idDetalleCompra";
+        try (Connection con = Conexion.nuevaConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, idCompra);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) { System.err.println(e.getMessage()); return false; }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(new DetalleCompra(
+                            rs.getInt("idDetalleCompra"), idCompra,
+                            rs.getInt("idProducto"), rs.getInt("cantidad"),
+                            rs.getDouble("precioUnitario"), rs.getDouble("subtotal")));
+                }
+            }
+        } catch (SQLException e) { System.err.println(e.getMessage()); }
+        return lista;
+    }
+
+    /**
+     * Anula la compra y devuelve al stock lo que habia ingresado (sin bajar de 0).
+     * Todo en una transaccion: si algo falla no queda a medias.
+     */
+    public boolean anular(int idCompra) {
+        String sqlEstado = "UPDATE compra SET estado='ANULADA' WHERE idCompra=? AND estado<>'ANULADA'";
+        String sqlStock = "UPDATE producto p JOIN detallecompra d ON d.idProducto=p.idProducto "
+                + "SET p.stock = GREATEST(0, p.stock - d.cantidad) WHERE d.idCompra=?";
+        Connection con = null;
+        try {
+            con = Conexion.nuevaConexion();
+            con.setAutoCommit(false);
+            try (PreparedStatement ps = con.prepareStatement(sqlEstado)) {
+                ps.setInt(1, idCompra);
+                if (ps.executeUpdate() == 0) { con.rollback(); return false; }
+            }
+            try (PreparedStatement ps = con.prepareStatement(sqlStock)) {
+                ps.setInt(1, idCompra);
+                ps.executeUpdate();
+            }
+            con.commit();
+            return true;
+        } catch (SQLException e) {
+            try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+            System.err.println("Error anular compra: " + e.getMessage());
+            return false;
+        } finally {
+            try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
+        }
     }
 }

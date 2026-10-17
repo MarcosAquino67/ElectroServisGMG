@@ -366,20 +366,26 @@ public final class UiTheme {
     public static double baseGravada(double total) { return total / (1 + IVA_PY); }
     public static double parseGs(String s) throws NumberFormatException {
         if (s == null) throw new NumberFormatException("vacio");
-        String t = s.replace("Gs.", "").replace("Gs", "").replace("$", "").replace(" ", "").replace(",", "").trim();
+        String t = s.replace("Gs.", "").replace("Gs", "").replace("$", "").replace("₲", "").replace(" ", "").replace(",", "").trim();
         if (t.isEmpty()) throw new NumberFormatException("vacio");
         if (t.matches(".*\\.\\d{3}(\\.\\d{3})*$") || t.matches("\\d{1,3}(\\.\\d{3})+")) t = t.replace(".", "");
         return Double.parseDouble(t);
     }
     public static int parseGsInt(String s) throws NumberFormatException { return (int) parseGs(s); }
 
-    public static void miles(javax.swing.JTextField txt) {
+    /** Solo números + puntos de miles (ej: 1000 -> 1.000). */
+    public static void miles(javax.swing.JTextField txt) { miles(txt, false); }
+
+    /** Solo números + puntos de miles, con símbolo ₲ adelante (ej: 1000 -> ₲ 1.000). */
+    public static void miles(javax.swing.JTextField txt, boolean conSimbolo) {
         if (!(txt.getDocument() instanceof AbstractDocument doc)) return;
         doc.setDocumentFilter(new DocumentFilter() {
             private String formatear(String s) {
                 String dig = s.replaceAll("[^0-9]", "").replaceFirst("^0+(?!$)", "");
                 if (dig.isEmpty()) return "";
-                try { return FMT_GS.format(Long.parseLong(dig)); } catch (NumberFormatException e) { return dig; }
+                String n;
+                try { n = FMT_GS.format(Long.parseLong(dig)); } catch (NumberFormatException e) { n = dig; }
+                return (conSimbolo ? "₲ " : "") + n;
             }
             private void aplicar(DocumentFilter.FilterBypass fb, String nuevo, AttributeSet a)
                     throws BadLocationException {

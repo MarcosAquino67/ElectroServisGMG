@@ -38,6 +38,36 @@ public class CajaMetodos {
         } catch (SQLException e) { System.out.println(e.getMessage()); return false; }
     }
 
+    /** Caja que esta abierta en este momento (o null si no hay ninguna). */
+    public Caja cajaAbierta() {
+        String sql = "SELECT * FROM caja WHERE estado='ABIERTA' ORDER BY idCaja DESC LIMIT 1";
+        try (Connection con = Conexion.getConexion(); Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
+            if (rs.next()) {
+                Caja c = new Caja();
+                c.setIdCaja(rs.getInt("idCaja"));
+                c.setIdUsuario(rs.getInt("idUsuario"));
+                c.setFechaApertura(rs.getTimestamp("fechaApertura"));
+                c.setFechaCierre(rs.getTimestamp("fechaCierre"));
+                c.setMontoInicial(rs.getDouble("montoInicial"));
+                c.setMontoFinal(rs.getDouble("montoFinal"));
+                c.setEstado(rs.getString("estado"));
+                return c;
+            }
+        } catch (SQLException e) { System.out.println(e.getMessage()); }
+        return null;
+    }
+
+    /** Suma de todos los movimientos de un tipo (INGRESO / EGRESO) de una caja. */
+    public double sumarMovimientos(int idCaja, String tipo) {
+        String sql = "SELECT COALESCE(SUM(monto),0) t FROM caja_movimiento WHERE idCaja=? AND tipo=?";
+        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idCaja);
+            ps.setString(2, tipo);
+            try (ResultSet rs = ps.executeQuery()) { if (rs.next()) return rs.getDouble("t"); }
+        } catch (SQLException e) { System.out.println(e.getMessage()); }
+        return 0;
+    }
+
     public List<CajaMovimiento> listarMovimientos(int idCaja) {
         List<CajaMovimiento> lista = new ArrayList<>();
         String sql = "SELECT * FROM caja_movimiento WHERE idCaja=? ORDER BY fecha DESC";

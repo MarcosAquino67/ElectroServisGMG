@@ -20,7 +20,24 @@ public class FormDashboard extends javax.swing.JPanel {
    public FormDashboard() {
     initComponents();
     ponerIconos();
+    separarCards();
     cargarDashboard();
+}
+
+/** Espaciado entre ícono / número / texto de cada card (fuera del GEN). */
+private void separarCards() {
+    separar(lblIcon1, 0, 8);
+    separar(lblNumIngresados, 0, 16);
+    separar(lblIcon2, 0, 8);
+    separar(lblNumARetirar, 0, 16);
+    separar(lblIcon3, 0, 8);
+    separar(lblNumTerminados, 0, 16);
+    separar(lblIcon4, 0, 8);
+    separar(lblNumStock, 0, 16);
+}
+
+private static void separar(javax.swing.JLabel lbl, int izq, int der) {
+    lbl.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, izq, 0, der));
 }
 
 private void ponerIconos() {
@@ -56,13 +73,16 @@ private void cargarDashboard() {
     lblNumTerminados.setText(String.valueOf(om.contarPorEstado("ENTREGADO")));
     
     java.util.List<Producto> prods = pm.listar();
+    int stockTotal = 0;
     String[] cols = {"ID", "Nombre", "Stock", "Precio", "Descripción"};
     Object[][] data = new Object[prods.size()][5];
     for (int i = 0; i < prods.size(); i++) {
         Producto p = prods.get(i);
+        stockTotal += p.getStock();
         data[i] = new Object[]{p.getIdProducto(), p.getNombre(), p.getStock(),
             UiTheme.gs(p.getPrecioVenta()), p.getDescripcion()};
     }
+    lblNumStock.setText(String.valueOf(stockTotal));
     tblStock.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
         public boolean isCellEditable(int r, int c) { return false; }
     });
@@ -227,7 +247,7 @@ private void cargarDashboard() {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 1032, Short.MAX_VALUE)
+            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 1220, Short.MAX_VALUE)
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)

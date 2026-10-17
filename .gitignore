@@ -1,8 +1,8 @@
 target/
 *.class
 tema.cfg
-imagenes_productos/
 respaldo_formularios/
+reportes_generados/
 nbproject/private/
 .vscode/
 *.log

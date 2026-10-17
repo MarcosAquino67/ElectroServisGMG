@@ -1,0 +1,430 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
+ */
+package com.electroservisgmg.formularios;
+
+import com.electroservisgmg.clases.Caja;
+import com.electroservisgmg.clases.CajaMovimiento;
+import com.electroservisgmg.clases.Sesion;
+import com.electroservisgmg.clases.Usuario;
+import com.electroservisgmg.metodos.CajaMetodos;
+
+import java.util.List;
+
+/**
+ * Apertura, movimientos y cierre de caja. Las ventas y compras dejan su
+ * movimiento automaticamente cuando la caja esta abierta.
+ *
+ * @author Aurelio
+ */
+public class FormCaja extends javax.swing.JPanel {
+
+    private Caja cajaActual;
+
+    /**
+     * Creates new form FormCaja
+     */
+    public FormCaja() {
+        initComponents();
+        UiTheme.styleTable(tblMovimientos);
+        UiTheme.miles(txtMonto, true);
+        btnAbrir.addActionListener(e -> abrirCaja());
+        btnCerrar.addActionListener(e -> cerrarCaja());
+        btnRegistrar.addActionListener(e -> registrar());
+        btnLimpiar.addActionListener(e -> limpiar());
+        cargar();
+    }
+
+    // ---- lectura de datos ----
+    private void cargar() {
+        Caja c = new CajaMetodos().cajaAbierta();
+        cajaActual = c;
+        if (c == null) {
+            lblEstado.setText("Caja CERRADA · presione \"Abrir caja\" para comenzar");
+            lblEstado.setForeground(new java.awt.Color(239, 68, 68));
+            lblIniV.setText(UiTheme.gs(0));
+            lblIngV.setText(UiTheme.gs(0));
+            lblEgrV.setText(UiTheme.gs(0));
+            lblSaldoV.setText(UiTheme.gs(0));
+            pintarMovimientos(null, new java.util.ArrayList<>());
+            btnAbrir.setEnabled(true);
+            btnCerrar.setEnabled(false);
+            btnRegistrar.setEnabled(false);
+            txtConcepto.setEnabled(false);
+            txtMonto.setEnabled(false);
+            cboTipo.setEnabled(false);
+            return;
+        }
+        CajaMetodos cm = new CajaMetodos();
+        double ini = c.getMontoInicial();
+        double ing = cm.sumarMovimientos(c.getIdCaja(), "INGRESO");
+        double egr = cm.sumarMovimientos(c.getIdCaja(), "EGRESO");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
+        String desde = c.getFechaApertura() == null ? "" : sdf.format(c.getFechaApertura());
+        lblEstado.setText("Caja ABIERTA (id " + c.getIdCaja() + ") · desde " + desde);
+        lblEstado.setForeground(new java.awt.Color(34, 197, 94));
+        lblIniV.setText(UiTheme.gs(ini));
+        lblIngV.setText(UiTheme.gs(ing));
+        lblEgrV.setText(UiTheme.gs(egr));
+        lblSaldoV.setText(UiTheme.gs(ini + ing - egr));
+        pintarMovimientos(c, cm.listarMovimientos(c.getIdCaja()));
+        btnAbrir.setEnabled(false);
+        btnCerrar.setEnabled(true);
+        btnRegistrar.setEnabled(true);
+        txtConcepto.setEnabled(true);
+        txtMonto.setEnabled(true);
+        cboTipo.setEnabled(true);
+    }
+
+    private void pintarMovimientos(Caja c, List<CajaMovimiento> movs) {
+        String[] cols = {"ID", "Fecha", "Tipo", "Concepto", "Monto"};
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
+        Object[][] data = new Object[movs.size()][5];
+        for (int i = 0; i < movs.size(); i++) {
+            CajaMovimiento m = movs.get(i);
+            data[i] = new Object[]{m.getIdMovimiento(),
+                m.getFecha() == null ? "" : sdf.format(m.getFecha()),
+                m.getTipo(), m.getDescripcion(), UiTheme.gs(m.getMonto())};
+        }
+        tblMovimientos.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
+            @Override public boolean isCellEditable(int r, int cc) { return false; }
+        });
+        tblMovimientos.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tblMovimientos.getColumnModel().getColumn(1).setPreferredWidth(140);
+        tblMovimientos.getColumnModel().getColumn(2).setPreferredWidth(110);
+        tblMovimientos.getColumnModel().getColumn(3).setPreferredWidth(420);
+        tblMovimientos.getColumnModel().getColumn(4).setPreferredWidth(140);
+        UiTheme.styleTable(tblMovimientos);
+    }
+
+    // ---- acciones ----
+    private void abrirCaja() {
+        if (new CajaMetodos().cajaAbierta() != null) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Ya hay una caja abierta");
+            cargar();
+            return;
+        }
+        String r = javax.swing.JOptionPane.showInputDialog(this,
+                "Monto inicial en caja (₲):", "0");
+        if (r == null) return;
+        double monto;
+        try {
+            monto = UiTheme.parseGs(r.trim().isEmpty() ? "0" : r.trim());
+            if (monto < 0) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Monto inicial inválido");
+            return;
+        }
+        Caja c = new Caja();
+        Usuario u = Sesion.getUsuario();
+        c.setIdUsuario(u != null ? u.getIdUsuario() : 1);
+        c.setFechaApertura(new java.util.Date());
+        c.setMontoInicial(monto);
+        boolean ok = new CajaMetodos().apertura(c);
+        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Caja abierta" : "No se pudo abrir la caja");
+        cargar();
+    }
+
+    private void cerrarCaja() {
+        Caja c = new CajaMetodos().cajaAbierta();
+        if (c == null) {
+            javax.swing.JOptionPane.showMessageDialog(this, "No hay ninguna caja abierta");
+            cargar();
+            return;
+        }
+        CajaMetodos cm = new CajaMetodos();
+        double saldo = c.getMontoInicial() + cm.sumarMovimientos(c.getIdCaja(), "INGRESO")
+                - cm.sumarMovimientos(c.getIdCaja(), "EGRESO");
+        int conf = javax.swing.JOptionPane.showConfirmDialog(this,
+                "¿Cerrar la caja #" + c.getIdCaja() + " con un saldo final de " + UiTheme.gs(saldo) + "?",
+                "Confirmar cierre", javax.swing.JOptionPane.YES_NO_OPTION);
+        if (conf != javax.swing.JOptionPane.YES_OPTION) return;
+        boolean ok = new CajaMetodos().cierre(c.getIdCaja(), saldo);
+        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Caja cerrada" : "No se pudo cerrar la caja");
+        cargar();
+    }
+
+    private void registrar() {
+        Caja c = new CajaMetodos().cajaAbierta();
+        if (c == null) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Primero abra la caja");
+            cargar();
+            return;
+        }
+        String concepto = txtConcepto.getText().trim();
+        if (concepto.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Escriba el concepto del movimiento");
+            return;
+        }
+        double monto;
+        try {
+            monto = UiTheme.parseGs(txtMonto.getText().trim());
+            if (monto <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            javax.swing.JOptionPane.showMessageDialog(this, "El monto debe ser un número mayor a 0");
+            return;
+        }
+        String tipo = String.valueOf(cboTipo.getSelectedItem());
+        boolean ok = new CajaMetodos().registrarMovimiento(c.getIdCaja(), tipo, monto, concepto);
+        if (ok) limpiar();
+        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Movimiento registrado" : "No se pudo registrar");
+        cargar();
+    }
+
+    private void limpiar() {
+        txtConcepto.setText("");
+        txtMonto.setText("");
+        cboTipo.setSelectedIndex(0);
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        jPanel1 = new javax.swing.JPanel();
+        panelNorte = new javax.swing.JPanel();
+        lblTitulo = new javax.swing.JLabel();
+        lblSub = new javax.swing.JLabel();
+        btnAbrir = new javax.swing.JButton();
+        btnCerrar = new javax.swing.JButton();
+        lblEstado = new javax.swing.JLabel();
+        panelTabla = new javax.swing.JPanel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        tblMovimientos = new javax.swing.JTable();
+        panelForm = new javax.swing.JPanel();
+        lblSaldoT = new javax.swing.JLabel();
+        lblSaldoV = new javax.swing.JLabel();
+        lblIniT = new javax.swing.JLabel();
+        lblIniV = new javax.swing.JLabel();
+        lblIngT = new javax.swing.JLabel();
+        lblIngV = new javax.swing.JLabel();
+        lblEgrT = new javax.swing.JLabel();
+        lblEgrV = new javax.swing.JLabel();
+        lblConcepto = new javax.swing.JLabel();
+        txtConcepto = new javax.swing.JTextField();
+        lblMonto = new javax.swing.JLabel();
+        txtMonto = new javax.swing.JTextField();
+        lblTipo = new javax.swing.JLabel();
+        cboTipo = new javax.swing.JComboBox<>();
+        btnRegistrar = new javax.swing.JButton();
+        btnLimpiar = new javax.swing.JButton();
+
+        jPanel1.setBackground(new java.awt.Color(18, 24, 36));
+        jPanel1.setPreferredSize(new java.awt.Dimension(1084, 700));
+        jPanel1.setLayout(new java.awt.BorderLayout());
+
+        panelNorte.setBackground(new java.awt.Color(18, 24, 36));
+        panelNorte.setPreferredSize(new java.awt.Dimension(0, 130));
+        panelNorte.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 20)); // NOI18N
+        lblTitulo.setForeground(new java.awt.Color(243, 244, 246));
+        lblTitulo.setText("CAJA");
+        panelNorte.add(lblTitulo, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 12, 400, 30));
+
+        lblSub.setForeground(new java.awt.Color(156, 163, 175));
+        lblSub.setText("Apertura, movimientos y cierre de caja");
+        panelNorte.add(lblSub, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 44, 600, 22));
+
+        btnAbrir.setBackground(new java.awt.Color(56, 189, 248));
+        btnAbrir.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnAbrir.setForeground(new java.awt.Color(15, 23, 42));
+        btnAbrir.setText("Abrir caja");
+        btnAbrir.setBorderPainted(false);
+        btnAbrir.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnAbrir.setFocusPainted(false);
+        panelNorte.add(btnAbrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 75, 140, 35));
+
+        btnCerrar.setBackground(new java.awt.Color(239, 68, 68));
+        btnCerrar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnCerrar.setForeground(new java.awt.Color(255, 255, 255));
+        btnCerrar.setText("Cerrar caja");
+        btnCerrar.setBorderPainted(false);
+        btnCerrar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnCerrar.setFocusPainted(false);
+        panelNorte.add(btnCerrar, new org.netbeans.lib.awtextra.AbsoluteConstraints(165, 75, 140, 35));
+
+        lblEstado.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        lblEstado.setForeground(new java.awt.Color(34, 197, 94));
+        lblEstado.setText("Caja CERRADA");
+        panelNorte.add(lblEstado, new org.netbeans.lib.awtextra.AbsoluteConstraints(325, 80, 700, 28));
+
+        jPanel1.add(panelNorte, java.awt.BorderLayout.NORTH);
+
+        panelTabla.setBackground(new java.awt.Color(18, 24, 36));
+        panelTabla.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 15, 10, 15));
+        panelTabla.setLayout(new java.awt.BorderLayout());
+
+        tblMovimientos.setBackground(new java.awt.Color(30, 41, 59));
+        tblMovimientos.setForeground(new java.awt.Color(243, 244, 246));
+        tblMovimientos.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4", "Title 5"
+            }
+        ));
+        tblMovimientos.setFillsViewportHeight(true);
+        tblMovimientos.setGridColor(new java.awt.Color(51, 65, 85));
+        tblMovimientos.setRowHeight(32);
+        tblMovimientos.setSelectionBackground(new java.awt.Color(2, 132, 199));
+        jScrollPane1.setViewportView(tblMovimientos);
+
+        panelTabla.add(jScrollPane1, java.awt.BorderLayout.CENTER);
+
+        jPanel1.add(panelTabla, java.awt.BorderLayout.CENTER);
+
+        panelForm.setBackground(new java.awt.Color(30, 41, 59));
+        panelForm.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createEmptyBorder(15, 20, 15, 20), javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85))));
+        panelForm.setPreferredSize(new java.awt.Dimension(0, 170));
+        panelForm.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        lblSaldoT.setForeground(new java.awt.Color(156, 163, 175));
+        lblSaldoT.setText("SALDO EN CAJA");
+        panelForm.add(lblSaldoT, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 8, 240, 18));
+
+        lblSaldoV.setBackground(new java.awt.Color(15, 23, 42));
+        lblSaldoV.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
+        lblSaldoV.setForeground(new java.awt.Color(56, 189, 248));
+        lblSaldoV.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblSaldoV.setText("₲ 0");
+        lblSaldoV.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
+        lblSaldoV.setOpaque(true);
+        panelForm.add(lblSaldoV, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 26, 240, 45));
+
+        lblIniT.setForeground(new java.awt.Color(156, 163, 175));
+        lblIniT.setText("MONTO INICIAL");
+        panelForm.add(lblIniT, new org.netbeans.lib.awtextra.AbsoluteConstraints(285, 8, 230, 18));
+
+        lblIniV.setBackground(new java.awt.Color(15, 23, 42));
+        lblIniV.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
+        lblIniV.setForeground(new java.awt.Color(243, 244, 246));
+        lblIniV.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblIniV.setText("₲ 0");
+        lblIniV.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
+        lblIniV.setOpaque(true);
+        panelForm.add(lblIniV, new org.netbeans.lib.awtextra.AbsoluteConstraints(285, 26, 230, 45));
+
+        lblIngT.setForeground(new java.awt.Color(156, 163, 175));
+        lblIngT.setText("INGRESOS");
+        panelForm.add(lblIngT, new org.netbeans.lib.awtextra.AbsoluteConstraints(535, 8, 230, 18));
+
+        lblIngV.setBackground(new java.awt.Color(15, 23, 42));
+        lblIngV.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
+        lblIngV.setForeground(new java.awt.Color(34, 197, 94));
+        lblIngV.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblIngV.setText("₲ 0");
+        lblIngV.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
+        lblIngV.setOpaque(true);
+        panelForm.add(lblIngV, new org.netbeans.lib.awtextra.AbsoluteConstraints(535, 26, 230, 45));
+
+        lblEgrT.setForeground(new java.awt.Color(156, 163, 175));
+        lblEgrT.setText("EGRESOS");
+        panelForm.add(lblEgrT, new org.netbeans.lib.awtextra.AbsoluteConstraints(785, 8, 230, 18));
+
+        lblEgrV.setBackground(new java.awt.Color(15, 23, 42));
+        lblEgrV.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
+        lblEgrV.setForeground(new java.awt.Color(239, 68, 68));
+        lblEgrV.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblEgrV.setText("₲ 0");
+        lblEgrV.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
+        lblEgrV.setOpaque(true);
+        panelForm.add(lblEgrV, new org.netbeans.lib.awtextra.AbsoluteConstraints(785, 26, 230, 45));
+
+        lblConcepto.setForeground(new java.awt.Color(156, 163, 175));
+        lblConcepto.setText("Concepto");
+        panelForm.add(lblConcepto, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 85, 300, 25));
+
+        txtConcepto.setBackground(new java.awt.Color(15, 23, 42));
+        txtConcepto.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtConcepto.setForeground(new java.awt.Color(243, 244, 246));
+        panelForm.add(txtConcepto, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 110, 300, 35));
+
+        lblMonto.setForeground(new java.awt.Color(156, 163, 175));
+        lblMonto.setText("Monto");
+        panelForm.add(lblMonto, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 85, 140, 25));
+
+        txtMonto.setBackground(new java.awt.Color(15, 23, 42));
+        txtMonto.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtMonto.setForeground(new java.awt.Color(243, 244, 246));
+        panelForm.add(txtMonto, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 110, 140, 35));
+
+        lblTipo.setForeground(new java.awt.Color(156, 163, 175));
+        lblTipo.setText("Tipo");
+        panelForm.add(lblTipo, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 85, 140, 25));
+
+        cboTipo.setBackground(new java.awt.Color(15, 23, 42));
+        cboTipo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        cboTipo.setForeground(new java.awt.Color(243, 244, 246));
+        cboTipo.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "INGRESO", "EGRESO" }));
+        panelForm.add(cboTipo, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 110, 140, 35));
+
+        btnRegistrar.setBackground(new java.awt.Color(22, 163, 74));
+        btnRegistrar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnRegistrar.setForeground(new java.awt.Color(255, 255, 255));
+        btnRegistrar.setText("+ Registrar");
+        btnRegistrar.setBorderPainted(false);
+        btnRegistrar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnRegistrar.setFocusPainted(false);
+        panelForm.add(btnRegistrar, new org.netbeans.lib.awtextra.AbsoluteConstraints(645, 110, 130, 35));
+
+        btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
+        btnLimpiar.setForeground(new java.awt.Color(243, 244, 246));
+        btnLimpiar.setText("Limpiar");
+        panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 110, 110, 35));
+
+        jPanel1.add(panelForm, java.awt.BorderLayout.SOUTH);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1035, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 644, Short.MAX_VALUE)
+        );
+    }// </editor-fold>//GEN-END:initComponents
+
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnAbrir;
+    private javax.swing.JButton btnCerrar;
+    private javax.swing.JButton btnLimpiar;
+    private javax.swing.JButton btnRegistrar;
+    private javax.swing.JComboBox<String> cboTipo;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JLabel lblConcepto;
+    private javax.swing.JLabel lblEgrT;
+    private javax.swing.JLabel lblEgrV;
+    private javax.swing.JLabel lblEstado;
+    private javax.swing.JLabel lblIngT;
+    private javax.swing.JLabel lblIngV;
+    private javax.swing.JLabel lblIniT;
+    private javax.swing.JLabel lblIniV;
+    private javax.swing.JLabel lblMonto;
+    private javax.swing.JLabel lblSaldoT;
+    private javax.swing.JLabel lblSaldoV;
+    private javax.swing.JLabel lblSub;
+    private javax.swing.JLabel lblTipo;
+    private javax.swing.JLabel lblTitulo;
+    private javax.swing.JPanel panelForm;
+    private javax.swing.JPanel panelNorte;
+    private javax.swing.JPanel panelTabla;
+    private javax.swing.JTable tblMovimientos;
+    private javax.swing.JTextField txtConcepto;
+    private javax.swing.JTextField txtMonto;
+    // End of variables declaration//GEN-END:variables
+}

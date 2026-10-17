@@ -17,7 +17,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
      */
     public FrmMenuPrincipal() {
         initComponents();
-        setSize(1360, 800);
+        setSize(1390, 800);
         setResizable(false);
         setLocationRelativeTo(null);
         // Sidebar siempre oscuro (no lo toca el recoloreo claro/oscuro)
@@ -30,6 +30,17 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnPanel.addActionListener(e -> btnPanelActionPerformed(e));
         btnUsuarios.addActionListener(e -> mostrarPanel(new FormUsuarios()));
         btnAjustes.addActionListener(e -> mostrarPanel(new FormAjustes()));
+        btnClientes.addActionListener(e -> mostrarPanel(new FormClientes()));
+        btnProveedores.addActionListener(e -> mostrarPanel(new FormProveedores()));
+        btnEquipos.addActionListener(e -> mostrarPanel(new FormEquipos()));
+        btnInventario.addActionListener(e -> mostrarPanel(new FormProductos()));
+        btnOrdenes.addActionListener(e -> mostrarPanel(new FormOrdenServicio()));
+        btnCompras.addActionListener(e -> mostrarPanel(new FormCompras()));
+        btnVentas.addActionListener(e -> mostrarPanel(new FormVentas()));
+        btnCaja.addActionListener(e -> mostrarPanel(new FormCaja()));
+        btnReportes.addActionListener(e -> mostrarPanel(new FormReportes()));
+        refrescarUsuario();
+        com.electroservisgmg.clases.Sesion.setListener(this::refrescarUsuario);
         mostrarPanel(new FormDashboard());
         lblFecha.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         panelHeader.addComponentListener(new java.awt.event.ComponentAdapter() {
@@ -47,6 +58,17 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
                 "dd/MM/yyyy · hh:mm:ss a", new java.util.Locale("es", "PY"));
             lblFecha.setText(f.format(new java.util.Date()));
         } catch (Exception ignored) {}
+    }
+
+    /** Actualiza el label del sidebar con el usuario en sesión. */
+    public void refrescarUsuario() {
+        com.electroservisgmg.clases.Usuario u = com.electroservisgmg.clases.Sesion.getUsuario();
+        if (u == null) {
+            lblUsuario.setText("Sin sesión");
+        } else {
+            String rol = (u.getRol() == null || u.getRol().isEmpty()) ? "ADMINISTRADOR" : u.getRol();
+            lblUsuario.setText(u.getNombre() + " · " + rol);
+        }
     }
 
     /** Carga cualquier JPanel en el area central (adaptado al tema actual). */
@@ -293,7 +315,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1360, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1390, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)

@@ -30,6 +30,11 @@ public class FormUsuarios extends javax.swing.JPanel {
         btnGuardar.addActionListener(e -> guardar());
         btnLimpiar.addActionListener(e -> limpiar());
         txtBuscar.addActionListener(e -> buscar());
+        txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
+        });
         tblUsuarios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) llenarDesdeFila();
         });
@@ -161,7 +166,22 @@ public class FormUsuarios extends javax.swing.JPanel {
         javax.swing.JOptionPane.showMessageDialog(this, ok ? "Guardado correctamente" : "Error al guardar");
         if (ok) {
             cargarTabla(txtBuscar.getText().trim());
+            String idTxt = txtId1.getText().trim();
+            if (!idTxt.isEmpty()) notificarSesion(Integer.parseInt(idTxt));
             limpiar();
+        }
+    }
+
+    /** Si se modificó el usuario en sesión, recarga sus datos y avisa al menú. */
+    private void notificarSesion(int idGuardado) {
+        com.electroservisgmg.clases.Usuario sesion = com.electroservisgmg.clases.Sesion.getUsuario();
+        if (sesion == null || sesion.getIdUsuario() != idGuardado) return;
+        for (Usuario u : new UsuarioMetodos().listar()) {
+            if (u.getIdUsuario() == idGuardado) {
+                com.electroservisgmg.clases.Sesion.setUsuario(u);
+                com.electroservisgmg.clases.Sesion.notificarCambio();
+                return;
+            }
         }
     }
 
@@ -361,7 +381,7 @@ public class FormUsuarios extends javax.swing.JPanel {
         txtId1.setBackground(new java.awt.Color(15, 23, 42));
         txtId1.setForeground(new java.awt.Color(243, 244, 246));
         txtId1.setPreferredSize(new java.awt.Dimension(64, 25));
-        panelForm.add(txtId1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 40, 80, 35));
+        panelForm.add(txtId1, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 40, 80, 35));
 
         lblNombre1.setText("Nombre");
         panelForm.add(lblNombre1, new org.netbeans.lib.awtextra.AbsoluteConstraints(120, 15, 200, 25));
@@ -373,7 +393,7 @@ public class FormUsuarios extends javax.swing.JPanel {
 
         jLabel2.setBackground(new java.awt.Color(156, 163, 175));
         jLabel2.setText("ID");
-        panelForm.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 15, 60, 25));
+        panelForm.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 15, 60, 25));
 
         txtClave.setBackground(new java.awt.Color(15, 23, 42));
         txtClave.setForeground(new java.awt.Color(243, 244, 246));

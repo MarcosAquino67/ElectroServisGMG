@@ -1,41 +1,108 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" name="comprobante_venta" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+<!--
+  Ticket de venta en formato recibo (hoja de 80 mm de ancho).
+  El alto de la hoja lo ajusta ReportesMetodos.ticketVenta segun la cantidad
+  de items, asi no sobra ni falta papel.
+  Datos de la empresa: nombre comercial, direccion y telefono (tabla empresa).
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" name="comprobante_venta"
+              pageWidth="227" pageHeight="270" columnWidth="213"
+              leftMargin="7" rightMargin="7" topMargin="8" bottomMargin="8">
+
+    <parameter name="empresa" class="java.lang.String"/>
+    <parameter name="direccionEmpresa" class="java.lang.String"/>
+    <parameter name="ubicacion" class="java.lang.String"/>
     <parameter name="nroVenta" class="java.lang.String"/>
-    <parameter name="cliente" class="java.lang.String"/>
     <parameter name="fecha" class="java.lang.String"/>
+    <parameter name="cliente" class="java.lang.String"/>
+    <parameter name="rucCi" class="java.lang.String"/>
+    <parameter name="vendedor" class="java.lang.String"/>
+    <parameter name="formaPago" class="java.lang.String"/>
     <parameter name="total" class="java.lang.String"/>
     <parameter name="iva" class="java.lang.String"/>
+
     <field name="producto" class="java.lang.String"/>
     <field name="cantidad" class="java.lang.Integer"/>
-    <field name="precioUnitario" class="java.lang.Double"/>
     <field name="subtotal" class="java.lang.Double"/>
+
     <title>
-        <band height="100">
-            <staticText><reportElement x="0" y="0" width="555" height="30"/><textElement textAlignment="Center"><font size="16" isBold="true"/></textElement><text><![CDATA[ELECTROSERVIS G.M.G - Ticket de Venta]]></text></staticText>
-            <textField><reportElement x="0" y="35" width="185" height="20"/><textFieldExpression><![CDATA["Venta Nro: " + $P{nroVenta}]]></textFieldExpression></textField>
-            <textField><reportElement x="185" y="35" width="185" height="20"/><textFieldExpression><![CDATA["Cliente: " + $P{cliente}]]></textFieldExpression></textField>
-            <textField><reportElement x="370" y="35" width="185" height="20"/><textFieldExpression><![CDATA["Fecha: " + $P{fecha}]]></textFieldExpression></textField>
-            <staticText><reportElement x="0" y="65" width="200" height="15"/><text><![CDATA[Producto]]></text></staticText>
-            <staticText><reportElement x="200" y="65" width="80" height="15"/><text><![CDATA[Cant]]></text></staticText>
-            <staticText><reportElement x="280" y="65" width="120" height="15"/><text><![CDATA[P.Unit]]></text></staticText>
-            <staticText><reportElement x="400" y="65" width="120" height="15"/><text><![CDATA[Subtotal]]></text></staticText>
+        <band height="150">
+            <!-- datos de la empresa -->
+            <textField>
+                <reportElement x="0" y="0" width="213" height="17" forecolor="#E67E22"/>
+                <textElement textAlignment="Center"><font size="12" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{empresa}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="19" width="213" height="22"/>
+                <textElement textAlignment="Center"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{direccionEmpresa}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="43" width="213" height="11"/>
+                <textElement textAlignment="Center"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{ubicacion}]]></textFieldExpression>
+            </textField>
+
+            <!-- datos de la venta -->
+            <staticText><reportElement x="0" y="57" width="213" height="11"/><textElement textAlignment="Center"><font size="8" isBold="true"/></textElement><text><![CDATA[==========================================]]></text></staticText>
+
+            <staticText><reportElement x="0" y="69" width="56" height="11"/><textElement><font size="8" isBold="true"/></textElement><text><![CDATA[NRO VENTA:]]></text></staticText>
+            <textField><reportElement x="58" y="69" width="155" height="11"/><textElement><font size="8"/></textElement><textFieldExpression><![CDATA[$P{nroVenta}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="80" width="56" height="11"/><textElement><font size="8" isBold="true"/></textElement><text><![CDATA[FECHA:]]></text></staticText>
+            <textField><reportElement x="58" y="80" width="155" height="11"/><textElement><font size="8"/></textElement><textFieldExpression><![CDATA[$P{fecha}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="91" width="56" height="11"/><textElement><font size="8" isBold="true"/></textElement><text><![CDATA[CLIENTE:]]></text></staticText>
+            <textField><reportElement x="58" y="91" width="155" height="11"/><textElement><font size="8"/></textElement><textFieldExpression><![CDATA[$P{cliente}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="102" width="56" height="11"/><textElement><font size="8" isBold="true"/></textElement><text><![CDATA[RUC/CI:]]></text></staticText>
+            <textField><reportElement x="58" y="102" width="155" height="11"/><textElement><font size="8"/></textElement><textFieldExpression><![CDATA[$P{rucCi}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="113" width="56" height="11"/><textElement><font size="8" isBold="true"/></textElement><text><![CDATA[VENDEDOR:]]></text></staticText>
+            <textField><reportElement x="58" y="113" width="155" height="11"/><textElement><font size="8"/></textElement><textFieldExpression><![CDATA[$P{vendedor}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="126" width="213" height="11"/><textElement textAlignment="Center"><font size="8" isBold="true"/></textElement><text><![CDATA[==========================================]]></text></staticText>
+
+            <!-- encabezado del detalle -->
+            <staticText><reportElement x="0" y="138" width="118" height="11"/><textElement><font size="8" isBold="true"/></textElement><text><![CDATA[DESCRIPCION]]></text></staticText>
+            <staticText><reportElement x="118" y="138" width="30" height="11"/><textElement textAlignment="Center"><font size="8" isBold="true"/></textElement><text><![CDATA[CANT]]></text></staticText>
+            <staticText><reportElement x="148" y="138" width="65" height="11"/><textElement textAlignment="Right"><font size="8" isBold="true"/></textElement><text><![CDATA[SUBTOTAL]]></text></staticText>
         </band>
     </title>
+
     <detail>
-        <band height="20">
-            <textField><reportElement x="0" y="0" width="200" height="20"/><textFieldExpression><![CDATA[$F{producto}]]></textFieldExpression></textField>
-            <textField><reportElement x="200" y="0" width="80" height="20"/><textFieldExpression><![CDATA[$F{cantidad}]]></textFieldExpression></textField>
-            <textField pattern="#,##0"><reportElement x="280" y="0" width="120" height="20"/><textFieldExpression><![CDATA[$F{precioUnitario}]]></textFieldExpression></textField>
-            <textField pattern="#,##0"><reportElement x="400" y="0" width="120" height="20"/><textFieldExpression><![CDATA[$F{subtotal}]]></textFieldExpression></textField>
+        <band height="12">
+            <textField><reportElement x="0" y="0" width="118" height="12"/><textElement verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{producto}]]></textFieldExpression></textField>
+            <textField><reportElement x="118" y="0" width="30" height="12"/><textElement textAlignment="Center" verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{cantidad}]]></textFieldExpression></textField>
+            <textField pattern="#,##0"><reportElement x="148" y="0" width="65" height="12"/><textElement textAlignment="Right" verticalAlignment="Middle"><font size="8"/></textElement><textFieldExpression><![CDATA[$F{subtotal}]]></textFieldExpression></textField>
         </band>
     </detail>
+
     <summary>
-        <band height="78">
-            <staticText><reportElement x="280" y="2" width="120" height="18"/><textElement textAlignment="Right"></textElement><text><![CDATA[IVA 10% incl.:]]></text></staticText>
-            <textField><reportElement x="400" y="2" width="120" height="18"/><textFieldExpression><![CDATA[$P{iva}]]></textFieldExpression></textField>
-            <staticText><reportElement x="280" y="22" width="120" height="20"/><textElement textAlignment="Right"><font isBold="true"/></textElement><text><![CDATA[TOTAL:]]></text></staticText>
-            <textField><reportElement x="400" y="22" width="120" height="20"/><textElement><font isBold="true" size="12"/></textElement><textFieldExpression><![CDATA[$P{total}]]></textFieldExpression></textField>
-            <staticText><reportElement x="0" y="48" width="555" height="16"/><textElement textAlignment="Center"><font size="8" isItalic="true"/></textElement><text><![CDATA[Precios en guaranies con IVA 10% incluido.]]></text></staticText>
+        <band height="90">
+            <staticText><reportElement x="0" y="0" width="213" height="11"/><textElement textAlignment="Center"><font size="8" isBold="true"/></textElement><text><![CDATA[==========================================]]></text></staticText>
+
+            <textField>
+                <reportElement x="0" y="12" width="213" height="16"/>
+                <textElement textAlignment="Center"><font size="11" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA["TOTAL A PAGAR:  " + $P{total}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="30" width="213" height="11"/>
+                <textElement textAlignment="Center"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["IVA incluido:  " + $P{iva}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="41" width="213" height="11"/>
+                <textElement textAlignment="Center"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["FORMA DE PAGO:  " + $P{formaPago}]]></textFieldExpression>
+            </textField>
+
+            <staticText><reportElement x="0" y="54" width="213" height="11"/><textElement textAlignment="Center"><font size="8" isBold="true"/></textElement><text><![CDATA[==========================================]]></text></staticText>
+
+            <staticText><reportElement x="0" y="66" width="213" height="11"/><textElement textAlignment="Center"><font size="7"/></textElement><text><![CDATA[Gracias por su compra, vuelva pronto]]></text></staticText>
+            <staticText><reportElement x="0" y="78" width="213" height="12"/><textElement textAlignment="Center"><font size="8" isBold="true"/></textElement><text><![CDATA[¡Gracias por su compra!]]></text></staticText>
         </band>
     </summary>
 </jasperReport>

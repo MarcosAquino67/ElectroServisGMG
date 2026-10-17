@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class Conexion {
     // BD de la aplicacion (ver sql/crear_bd_app.sql). No usar electroservis_db:
     // esa es otra base con esquema distinto (tablas en plural) y rompe los inserts.
-    private static final String URL = "jdbc:mysql://localhost:3306/electroservis_app?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    private static final String URL = "jdbc:mysql://localhost:3306/electroservis_app?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Asuncion";
     private static final String USER = "root";
     private static final String PASS = "2307";
 

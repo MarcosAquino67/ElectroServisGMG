@@ -3,14 +3,35 @@ package com.electroservisgmg.clases;
 import java.util.Date;
 
 public class Venta {
+    public static final String TICKET = "TICKET";
+    public static final String FACTURA = "FACTURA";
+
     private int idVenta;
     private int idCliente;
     private int idUsuario;
     private Date fechaVenta;
     private double total;
     private String formaPago;
+    private String condicionVenta;
+    private String tipoTransaccion;
+    private String tipoDocumento = TICKET;
+    private int nroFactura;
+    /** Codigo de Control (44 digitos) de la Factura Electronica; null si solo se emitio ticket. */
+    private String cdc;
 
     public Venta() {}
+
+    public String getCondicionVenta() { return condicionVenta; }
+    public void setCondicionVenta(String condicionVenta) { this.condicionVenta = condicionVenta; }
+    public String getTipoTransaccion() { return tipoTransaccion; }
+    public void setTipoTransaccion(String tipoTransaccion) { this.tipoTransaccion = tipoTransaccion; }
+    public String getTipoDocumento() { return tipoDocumento; }
+    public void setTipoDocumento(String tipoDocumento) { this.tipoDocumento = tipoDocumento; }
+    public int getNroFactura() { return nroFactura; }
+    public void setNroFactura(int nroFactura) { this.nroFactura = nroFactura; }
+    public String getCdc() { return cdc; }
+    public void setCdc(String cdc) { this.cdc = cdc; }
+    public boolean esFactura() { return cdc != null && !cdc.isEmpty(); }
 
     public int getIdVenta() { return idVenta; }
     public void setIdVenta(int idVenta) { this.idVenta = idVenta; }

@@ -118,6 +118,7 @@ public class FrmLogin extends javax.swing.JFrame {
 
         txtClave.setBackground(new java.awt.Color(15, 23, 42));
         txtClave.setForeground(new java.awt.Color(243, 244, 246));
+        txtClave.addActionListener(this::txtClaveActionPerformed);
         paneltarjeta.add(txtClave, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 190, 260, 30));
 
         btnSalir.setBackground(new java.awt.Color(71, 85, 105));
@@ -179,9 +180,14 @@ System.exit(0);
             txtClave.requestFocus();
             return;
         }
+        com.electroservisgmg.clases.Sesion.setUsuario(u);
         new FrmMenuPrincipal().setVisible(true);
         this.dispose();
     }//GEN-LAST:event_btnIngresarActionPerformed
+
+    private void txtClaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtClaveActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtClaveActionPerformed
 
     /**
      * @param args the command line arguments

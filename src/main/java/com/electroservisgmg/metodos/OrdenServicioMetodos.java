@@ -33,6 +33,29 @@ public class OrdenServicioMetodos {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { System.out.println(e.getMessage()); return false; }
     }
+
+    /** Marca la orden como ENTREGADA con fecha de hoy (retiro del equipo). */
+    public boolean marcarRetirado(int idOrden) {
+        String sql = "UPDATE ordenservicio SET estado='ENTREGADO', fechaEntrega=NOW() WHERE idOrden=?";
+        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idOrden);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { System.out.println(e.getMessage()); return false; }
+    }
+
+    public boolean modificar(OrdenServicio o) {
+        String sql = "UPDATE ordenservicio SET idCliente=?, idEquipo=?, estado=?, diagnostico=?, costoReparacion=?, observaciones=? WHERE idOrden=?";
+        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, o.getIdCliente());
+            ps.setInt(2, o.getIdEquipo());
+            ps.setString(3, o.getEstado());
+            ps.setString(4, o.getDiagnostico());
+            ps.setDouble(5, o.getCostoReparacion());
+            ps.setString(6, o.getObservaciones());
+            ps.setInt(7, o.getIdOrden());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { System.out.println(e.getMessage()); return false; }
+    }
     public boolean eliminar(int id) {
         String sql = "DELETE FROM ordenservicio WHERE idOrden=?";
         try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
