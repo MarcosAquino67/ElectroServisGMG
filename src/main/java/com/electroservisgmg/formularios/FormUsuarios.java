@@ -24,13 +24,9 @@ public class FormUsuarios extends javax.swing.JPanel {
         cboEstado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"ACTIVO", "INACTIVO"}));
         UiTheme.styleTable(tblUsuarios);
         cargarTabla("");
-        btnBuscar.addActionListener(e -> buscar());
-        btnNuevo.addActionListener(e -> limpiar());
-        btnEditar.addActionListener(e -> editar());   // Editar
-        btnEliminar.addActionListener(e -> eliminar()); // Eliminar
-        btnGuardar.addActionListener(e -> guardar());
-        btnLimpiar.addActionListener(e -> limpiar());
-        txtBuscar.addActionListener(e -> buscar());
+        // Los botones y el campo de busqueda se conectan desde el disenador
+        // (pestana Events -> actionPerformed). Aca quedan solo los extras que
+        // el disenador no modela.
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
@@ -84,12 +80,6 @@ public class FormUsuarios extends javax.swing.JPanel {
         panelForm.add(cboRol, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 90, 140, 38));
     }
 
-    /** Rol elegido en el combo. */
-    private String rolSeleccionado() {
-        Object r = cboRol == null ? null : cboRol.getSelectedItem();
-        return r == null ? "USUARIO" : r.toString();
-    }
-
     /** Marca en el combo el rol que trae el usuario. */
     private void seleccionarRol(String rol) {
         if (cboRol == null) return;
@@ -125,23 +115,7 @@ public class FormUsuarios extends javax.swing.JPanel {
     }
 
     private void cargarTabla(String filtro) {
-        UsuarioMetodos um = new UsuarioMetodos();
-        java.util.List<Usuario> lista = um.listar();
-        String f = filtro == null ? "" : filtro.toLowerCase();
-        java.util.List<Usuario> fil = new java.util.ArrayList<>();
-        for (Usuario u : lista) {
-            if (f.isEmpty() || u.getNombre().toLowerCase().contains(f)
-                    || u.getUsuario().toLowerCase().contains(f)) fil.add(u);
-        }
-        String[] cols = {"ID", "Nombre", "Usuario", "Rol", "Estado"};
-        Object[][] data = new Object[fil.size()][5];
-        for (int i = 0; i < fil.size(); i++) {
-            Usuario u = fil.get(i);
-            data[i] = new Object[]{u.getIdUsuario(), u.getNombre(), u.getUsuario(), u.getRol(), u.getEstado()};
-        }
-        tblUsuarios.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        });
+        new UsuarioMetodos().mostrar(tblUsuarios, filtro);
         UiTheme.styleTable(tblUsuarios);
         tblUsuarios.getColumnModel().getColumn(3).setPreferredWidth(140);   // "ADMINISTRADOR" completo
     }
@@ -182,47 +156,7 @@ public class FormUsuarios extends javax.swing.JPanel {
     }
 
     private void guardar() {
-        String nombre = txtNombre1.getText().trim();
-        String user = txtUsuario.getText().trim();
-        String pass = new String(txtClave.getPassword());
-        if (nombre.isEmpty() || user.isEmpty() || pass.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Complete nombre, usuario y clave");
-            return;
-        }
-        if (pass.length() < 4) {
-            javax.swing.JOptionPane.showMessageDialog(this, "La clave debe tener al menos 4 caracteres");
-            return;
-        }
-        String rol = rolSeleccionado();
-        // si te estas editando a vos mismo no te podes sacar el rol de administrador:
-        // despues no podrias volver a entrar a Usuarios ni a Ajustes
-        Usuario sesion = com.electroservisgmg.clases.Sesion.getUsuario();
-        if (!txtId1.getText().trim().isEmpty() && sesion != null && !"ADMINISTRADOR".equalsIgnoreCase(rol)) {
-            try {
-                if (Integer.parseInt(txtId1.getText().trim()) == sesion.getIdUsuario()) {
-                    javax.swing.JOptionPane.showMessageDialog(this,
-                            "No te podés quitar a vos mismo el rol de ADMINISTRADOR:\n"
-                            + "después no podrías volver a entrar a Usuarios ni a Ajustes.");
-                    return;
-                }
-            } catch (NumberFormatException ignored) {}
-        }
-        Usuario u = new Usuario();
-        u.setNombre(nombre);
-        u.setUsuario(user);
-        u.setClave(pass);
-        u.setRol(rol);
-        u.setEstado(cboEstado.getSelectedItem().toString());
-        UsuarioMetodos um = new UsuarioMetodos();
-        boolean ok;
-        if (txtId1.getText().trim().isEmpty()) {
-            ok = um.insertar(u);
-        } else {
-            u.setIdUsuario(Integer.parseInt(txtId1.getText().trim()));
-            ok = um.modificar(u);
-        }
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Guardado correctamente" : "Error al guardar");
-        if (ok) {
+        if (new UsuarioMetodos().guardar(txtId1, txtNombre1, txtUsuario, txtClave, cboRol, cboEstado)) {
             cargarTabla(txtBuscar.getText().trim());
             String idTxt = txtId1.getText().trim();
             if (!idTxt.isEmpty()) notificarSesion(Integer.parseInt(idTxt));
@@ -249,24 +183,11 @@ public class FormUsuarios extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un usuario de la tabla");
             return;
         }
-        int id = (int) tblUsuarios.getValueAt(fila, 0);
-        if (id == 1) {
-            javax.swing.JOptionPane.showMessageDialog(this, "No se puede eliminar el usuario principal");
-            return;
-        }
-        // no podes borrarte a vos mismo: seguirias en sesion como un usuario que ya no existe
-        com.electroservisgmg.clases.Usuario sesion = com.electroservisgmg.clases.Sesion.getUsuario();
-        if (sesion != null && id == sesion.getIdUsuario()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "No te podés eliminar a vos mismo estando en sesión");
-            return;
-        }
         int c = javax.swing.JOptionPane.showConfirmDialog(this,
                 "¿Eliminar usuario '" + tblUsuarios.getValueAt(fila, 1) + "'?",
                 "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
         if (c != javax.swing.JOptionPane.YES_OPTION) return;
-        boolean ok = new UsuarioMetodos().eliminar(id);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Eliminado" : "Error al eliminar");
-        if (ok) {
+        if (new UsuarioMetodos().eliminar(txtId1)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -343,23 +264,28 @@ public class FormUsuarios extends javax.swing.JPanel {
         txtBuscar.setBackground(new java.awt.Color(15, 23, 42));
         txtBuscar.setForeground(new java.awt.Color(243, 244, 246));
         txtBuscar.setPreferredSize(new java.awt.Dimension(250, 35));
+        txtBuscar.addActionListener(this::txtBuscarActionPerformed);
 
         btnBuscar.setBackground(new java.awt.Color(51, 65, 85));
         btnBuscar.setForeground(new java.awt.Color(243, 244, 246));
         btnBuscar.setText("Buscar");
+        btnBuscar.addActionListener(this::btnBuscarActionPerformed);
 
         btnNuevo.setBackground(new java.awt.Color(56, 189, 248));
         btnNuevo.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnNuevo.setForeground(new java.awt.Color(15, 23, 42));
         btnNuevo.setText("+ Nuevo");
+        btnNuevo.addActionListener(this::btnNuevoActionPerformed);
 
         btnEditar.setBackground(new java.awt.Color(51, 65, 85));
         btnEditar.setForeground(new java.awt.Color(243, 244, 246));
         btnEditar.setText("Editar");
+        btnEditar.addActionListener(this::btnEditarActionPerformed);
 
         btnEliminar.setBackground(new java.awt.Color(239, 68, 68));
         btnEliminar.setForeground(new java.awt.Color(255, 255, 255));
         btnEliminar.setText("Eliminar");
+        btnEliminar.addActionListener(this::btnEliminarActionPerformed);
 
         panelTabla.setBackground(new java.awt.Color(18, 24, 36));
         panelTabla.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 15, 10, 15));
@@ -479,6 +405,7 @@ public class FormUsuarios extends javax.swing.JPanel {
         btnGuardar.setText("Guardar");
         btnGuardar.setBorderPainted(false);
         btnGuardar.setFocusPainted(false);
+        btnGuardar.addActionListener(this::btnGuardarActionPerformed);
         panelForm.add(btnGuardar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 90, 150, 38));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
@@ -486,10 +413,39 @@ public class FormUsuarios extends javax.swing.JPanel {
         btnLimpiar.setText("Limpiar");
         btnLimpiar.setBorderPainted(false);
         btnLimpiar.setFocusPainted(false);
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 90, 150, 38));
 
         add(panelForm, java.awt.BorderLayout.PAGE_END);
     }// </editor-fold>//GEN-END:initComponents
+
+    private void txtBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_txtBuscarActionPerformed
+
+    private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_btnBuscarActionPerformed
+
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
+        editar();
+    }//GEN-LAST:event_btnEditarActionPerformed
+
+    private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
+        eliminar();
+    }//GEN-LAST:event_btnEliminarActionPerformed
+
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        guardar();
+    }//GEN-LAST:event_btnGuardarActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
