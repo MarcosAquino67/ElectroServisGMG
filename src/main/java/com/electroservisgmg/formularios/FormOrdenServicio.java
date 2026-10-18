@@ -7,7 +7,6 @@ package com.electroservisgmg.formularios;
 import com.electroservisgmg.clases.Cliente;
 import com.electroservisgmg.clases.Equipo;
 import com.electroservisgmg.clases.OrdenServicio;
-import com.electroservisgmg.clases.Sesion;
 import com.electroservisgmg.metodos.ClienteMetodos;
 import com.electroservisgmg.metodos.EquipoMetodos;
 import com.electroservisgmg.metodos.OrdenServicioMetodos;
@@ -26,29 +25,22 @@ public class FormOrdenServicio extends javax.swing.JPanel {
      */
     public FormOrdenServicio() {
         initComponents();
-        txtBuscar.setText("");
         UiTheme.styleTable(tblOrdenes);
         UiTheme.miles(txtCosto, true);
         cargarClientes();
         cargarEstados();
         cargarEquipos();
         cargarTabla("");
-        btnBuscar.addActionListener(e -> buscar());
-        btnNuevo.addActionListener(e -> limpiar());
-        btnEditar.addActionListener(e -> editar());
-        btnEliminar.addActionListener(e -> eliminar());
-        btnGuardar.addActionListener(e -> guardar());
-        btnLimpiar.addActionListener(e -> limpiar());
-        btnRetirar.addActionListener(e -> retirar());
         crearBotonImprimir();
         crearBotonRepuestos();
-        txtBuscar.addActionListener(e -> buscar());
+        // Los botones, el campo de busqueda y el combo de cliente se conectan
+        // desde el disenador (pestana Events -> actionPerformed). Aca quedan
+        // solo los extras que el disenador no modela.
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
         });
-        cboCliente.addActionListener(e -> cargarEquipos());
         tblOrdenes.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) llenarDesdeFila();
         });
@@ -193,12 +185,6 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         }
     }
 
-    private int idEquipoSeleccionado() {
-        int i = cboEquipo.getSelectedIndex();
-        if (i < 0 || i >= listaEquipos.size()) return -1;
-        return listaEquipos.get(i).getIdEquipo();
-    }
-
     private void seleccionarEquipo(int id) {
         for (int i = 0; i < listaEquipos.size(); i++) {
             if (listaEquipos.get(i).getIdEquipo() == id) { cboEquipo.setSelectedIndex(i); return; }
@@ -206,47 +192,9 @@ public class FormOrdenServicio extends javax.swing.JPanel {
     }
 
     // ---- mapa para tabla ----
-    private java.util.Map<Integer, String> mapaClientes() {
-        java.util.Map<Integer, String> m = new java.util.HashMap<>();
-        for (Cliente c : new ClienteMetodos().listar()) m.put(c.getIdCliente(), c.getNombre() + " " + c.getApellido());
-        return m;
-    }
-
-    private java.util.Map<Integer, String> mapaEquipos() {
-        java.util.Map<Integer, String> m = new java.util.HashMap<>();
-        for (Equipo e : new EquipoMetodos().listar())
-            m.put(e.getIdEquipo(), e.getMarca() + " " + e.getModelo() + " (" + e.getNroSerie() + ")");
-        return m;
-    }
-
     // ---- tabla ----
     private void cargarTabla(String filtro) {
-        java.util.List<OrdenServicio> lista = new OrdenServicioMetodos().listar();
-        java.util.Map<Integer, String> cli = mapaClientes();
-        java.util.Map<Integer, String> eq = mapaEquipos();
-        String f = filtro == null ? "" : filtro.toLowerCase();
-        java.util.List<OrdenServicio> fil = new java.util.ArrayList<>();
-        for (OrdenServicio o : lista) {
-            String nomCli = cli.getOrDefault(o.getIdCliente(), "");
-            String nomEq = eq.getOrDefault(o.getIdEquipo(), "");
-            if (f.isEmpty() || nomCli.toLowerCase().contains(f)
-                    || nomEq.toLowerCase().contains(f)
-                    || o.getEstado().toLowerCase().contains(f)) fil.add(o);
-        }
-        String[] cols = {"ID", "Cliente", "Equipo", "Ingreso", "Estado", "Costo"};
-        Object[][] data = new Object[fil.size()][6];
-        java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("dd/MM/yyyy");
-        for (int i = 0; i < fil.size(); i++) {
-            OrdenServicio o = fil.get(i);
-            data[i] = new Object[]{o.getIdOrden(),
-                cli.getOrDefault(o.getIdCliente(), "ID " + o.getIdCliente()),
-                eq.getOrDefault(o.getIdEquipo(), "ID " + o.getIdEquipo()),
-                o.getFechaIngreso() == null ? "" : df.format(o.getFechaIngreso()),
-                o.getEstado(), UiTheme.gs(o.getCostoReparacion())};
-        }
-        tblOrdenes.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        });
+        new OrdenServicioMetodos().mostrar(tblOrdenes, filtro);
         UiTheme.styleTable(tblOrdenes);
     }
 
@@ -298,48 +246,8 @@ public class FormOrdenServicio extends javax.swing.JPanel {
     }
 
     private void guardar() {
-        if (cboCliente.getItemCount() == 0) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Primero registre un cliente");
-            return;
-        }
-        int idCli = idClienteSeleccionado();
-        int idEq = idEquipoSeleccionado();
-        if (idCli < 0 || idEq < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Seleccione cliente y equipo");
-            return;
-        }
-        double costo = 0;
-        if (!txtCosto.getText().trim().isEmpty()) {
-            try {
-                costo = UiTheme.parseGs(txtCosto.getText().trim());
-                if (costo < 0) throw new NumberFormatException();
-            } catch (NumberFormatException e) {
-                javax.swing.JOptionPane.showMessageDialog(this, "El costo debe ser un número válido (≥ 0)");
-                return;
-            }
-        }
-        OrdenServicio o = new OrdenServicio();
-        o.setIdCliente(idCli);
-        o.setIdEquipo(idEq);
-        o.setEstado(cboEstado.getSelectedItem().toString());
-        o.setDiagnostico(txtDiagnostico.getText().trim());
-        o.setCostoReparacion(costo);
-        o.setObservaciones(txtObservaciones.getText().trim());
-        OrdenServicioMetodos om = new OrdenServicioMetodos();
-        boolean ok;
-        String msg;
-        if (txtId.getText().trim().isEmpty()) {
-            o.setFechaIngreso(new java.util.Date());
-            o.setIdUsuario(Sesion.getUsuario() == null ? 1 : Sesion.getUsuario().getIdUsuario());
-            ok = om.insertar(o);
-            msg = ok ? "Orden creada correctamente" : "Error al crear la orden";
-        } else {
-            o.setIdOrden(Integer.parseInt(txtId.getText().trim()));
-            ok = om.modificar(o);
-            msg = ok ? "Orden actualizada" : "Error al guardar";
-        }
-        javax.swing.JOptionPane.showMessageDialog(this, msg);
-        if (ok) {
+        if (new OrdenServicioMetodos().guardar(txtId, cboCliente, cboEquipo, cboEstado, txtCosto,
+                txtDiagnostico, txtObservaciones)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -355,9 +263,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         int conf = javax.swing.JOptionPane.showConfirmDialog(this,
                 "¿Eliminar orden #" + id + "?", "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        boolean ok = new OrdenServicioMetodos().eliminar(id);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Eliminada" : "Error al eliminar");
-        if (ok) {
+        if (new OrdenServicioMetodos().eliminar(txtId)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -370,19 +276,11 @@ public class FormOrdenServicio extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Seleccione una orden de la tabla");
             return;
         }
-        String estado = String.valueOf(tblOrdenes.getValueAt(fila, 4));
-        if ("ENTREGADO".equals(estado)) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Esta orden ya fue retirada");
-            return;
-        }
-        int id = (int) tblOrdenes.getValueAt(fila, 0);
         int conf = javax.swing.JOptionPane.showConfirmDialog(this,
-                "¿Marcar la orden #" + id + " como retirada (ENTREGADO)?",
+                "¿Marcar la orden #" + tblOrdenes.getValueAt(fila, 0) + " como retirada (ENTREGADO)?",
                 "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        boolean ok = new OrdenServicioMetodos().marcarRetirado(id);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Equipo retirado. Orden entregada." : "Error al actualizar");
-        if (ok) {
+        if (new OrdenServicioMetodos().retirar(tblOrdenes)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -447,6 +345,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         txtBuscar.setBackground(new java.awt.Color(15, 23, 42));
         txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtBuscar.setForeground(new java.awt.Color(243, 244, 246));
+        txtBuscar.addActionListener(this::txtBuscarActionPerformed);
         panelNorte.add(txtBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 75, 250, 35));
 
         btnBuscar.setBackground(new java.awt.Color(51, 65, 85));
@@ -456,6 +355,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         btnBuscar.setBorderPainted(false);
         btnBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBuscar.setFocusPainted(false);
+        btnBuscar.addActionListener(this::btnBuscarActionPerformed);
         panelNorte.add(btnBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(275, 75, 110, 35));
 
         btnNuevo.setBackground(new java.awt.Color(56, 189, 248));
@@ -465,6 +365,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         btnNuevo.setBorderPainted(false);
         btnNuevo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnNuevo.setFocusPainted(false);
+        btnNuevo.addActionListener(this::btnNuevoActionPerformed);
         panelNorte.add(btnNuevo, new org.netbeans.lib.awtextra.AbsoluteConstraints(385, 75, 110, 35));
 
         btnEditar.setBackground(new java.awt.Color(51, 65, 85));
@@ -474,6 +375,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         btnEditar.setBorderPainted(false);
         btnEditar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnEditar.setFocusPainted(false);
+        btnEditar.addActionListener(this::btnEditarActionPerformed);
         panelNorte.add(btnEditar, new org.netbeans.lib.awtextra.AbsoluteConstraints(505, 75, 100, 35));
 
         btnEliminar.setBackground(new java.awt.Color(239, 68, 68));
@@ -483,6 +385,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         btnEliminar.setBorderPainted(false);
         btnEliminar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnEliminar.setFocusPainted(false);
+        btnEliminar.addActionListener(this::btnEliminarActionPerformed);
         panelNorte.add(btnEliminar, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 75, 110, 35));
 
         btnRetirar.setBackground(new java.awt.Color(34, 197, 94));
@@ -492,6 +395,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         btnRetirar.setBorderPainted(false);
         btnRetirar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnRetirar.setFocusPainted(false);
+        btnRetirar.addActionListener(this::btnRetirarActionPerformed);
         panelNorte.add(btnRetirar, new org.netbeans.lib.awtextra.AbsoluteConstraints(735, 75, 170, 35));
 
         jPanel1.add(panelNorte, java.awt.BorderLayout.PAGE_START);
@@ -563,6 +467,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         cboCliente.setBackground(new java.awt.Color(15, 23, 42));
         cboCliente.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         cboCliente.setForeground(new java.awt.Color(243, 244, 246));
+        cboCliente.addActionListener(this::cboClienteActionPerformed);
         jPanel3.add(cboCliente, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 40, 220, 35));
 
         cboEquipo.setBackground(new java.awt.Color(15, 23, 42));
@@ -597,11 +502,13 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnGuardar.setForeground(new java.awt.Color(255, 255, 255));
         btnGuardar.setText("Guardar");
+        btnGuardar.addActionListener(this::btnGuardarActionPerformed);
         jPanel3.add(btnGuardar, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 115, 120, 38));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
         btnLimpiar.setForeground(new java.awt.Color(243, 244, 246));
         btnLimpiar.setText("Limpiar");
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         jPanel3.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 115, 110, 38));
 
         jPanel1.add(jPanel3, java.awt.BorderLayout.PAGE_END);
@@ -617,6 +524,42 @@ public class FormOrdenServicio extends javax.swing.JPanel {
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 599, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void txtBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_txtBuscarActionPerformed
+
+    private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_btnBuscarActionPerformed
+
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
+        editar();
+    }//GEN-LAST:event_btnEditarActionPerformed
+
+    private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
+        eliminar();
+    }//GEN-LAST:event_btnEliminarActionPerformed
+
+    private void btnRetirarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRetirarActionPerformed
+        retirar();
+    }//GEN-LAST:event_btnRetirarActionPerformed
+
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        guardar();
+    }//GEN-LAST:event_btnGuardarActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
+
+    private void cboClienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cboClienteActionPerformed
+        cargarEquipos();
+    }//GEN-LAST:event_cboClienteActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
