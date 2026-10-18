@@ -4,15 +4,7 @@
  */
 package com.electroservisgmg.formularios;
 
-import com.electroservisgmg.clases.Cliente;
-import com.electroservisgmg.clases.OrdenServicio;
-import com.electroservisgmg.clases.Venta;
-import com.electroservisgmg.metodos.ClienteMetodos;
-import com.electroservisgmg.metodos.OrdenServicioMetodos;
-import com.electroservisgmg.metodos.VentaMetodos;
 import com.electroservisgmg.reportes.ReportesMetodos;
-
-import java.util.List;
 
 /**
  * Pantalla de reportes: genera los PDF (listados y comprobantes) y los abre.
@@ -26,156 +18,8 @@ public class FormReportes extends javax.swing.JPanel {
      */
     public FormReportes() {
         initComponents();
-        btnInventario.addActionListener(e -> generar(() -> ReportesMetodos.inventario(), "Reporte de inventario"));
-        btnClientes.addActionListener(e -> generar(() -> ReportesMetodos.clientes(), "Reporte de clientes"));
-        btnVentasTodas.addActionListener(e -> generar(() -> ReportesMetodos.ventas(null, null), "Reporte de ventas"));
-        btnVentasRango.addActionListener(e -> ventasPorRango());
-        btnTicket.addActionListener(e -> elegirVenta());
-        btnOrden.addActionListener(e -> elegirOrden());
-        btnCarpeta.addActionListener(e -> abrirCarpeta());
-        btnFacturaReporte.addActionListener(e -> elegirVentaFactura());
-    }
-
-    /** Ejecuta la generacion y avisa el resultado; abre el PDF si salio bien. */
-    private void generar(java.util.concurrent.Callable<java.io.File> tarea, String titulo) {
-        try {
-            java.io.File pdf = tarea.call();
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    titulo + " generado:\n" + pdf.getAbsolutePath());
-            ReportesMetodos.abrir(pdf);
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "No se pudo generar " + titulo.toLowerCase() + ":\n" + e.getMessage());
-        }
-    }
-
-    private void ventasPorRango() {
-        com.toedter.calendar.JDateChooser d1 = new com.toedter.calendar.JDateChooser();
-        com.toedter.calendar.JDateChooser d2 = new com.toedter.calendar.JDateChooser();
-        d1.setDateFormatString("dd/MM/yyyy");
-        d2.setDateFormatString("dd/MM/yyyy");
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        d2.setDate(cal.getTime());
-        cal.add(java.util.Calendar.DAY_OF_MONTH, -30);
-        d1.setDate(cal.getTime());
-        javax.swing.JPanel p = new javax.swing.JPanel(new java.awt.GridLayout(2, 2, 6, 6));
-        p.add(new javax.swing.JLabel("Desde:"));
-        p.add(d1);
-        p.add(new javax.swing.JLabel("Hasta:"));
-        p.add(d2);
-        int r = javax.swing.JOptionPane.showConfirmDialog(this, p, "Rango de fechas de ventas",
-                javax.swing.JOptionPane.OK_CANCEL_OPTION, javax.swing.JOptionPane.PLAIN_MESSAGE);
-        if (r != javax.swing.JOptionPane.OK_OPTION) return;
-        if (d1.getDate() == null || d2.getDate() == null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Elija las dos fechas");
-            return;
-        }
-        if (d1.getDate().after(d2.getDate())) {
-            javax.swing.JOptionPane.showMessageDialog(this, "La fecha \"Desde\" no puede ser mayor que \"Hasta\"");
-            return;
-        }
-        java.text.SimpleDateFormat iso = new java.text.SimpleDateFormat("yyyy-MM-dd");
-        generar(() -> ReportesMetodos.ventas(iso.format(d1.getDate()), iso.format(d2.getDate())),
-                "Reporte de ventas");
-    }
-
-    private void elegirVenta() {
-        List<Venta> ventas = new VentaMetodos().listar();
-        if (ventas.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Todavía no hay ventas registradas");
-            return;
-        }
-        List<Cliente> clientes = new ClienteMetodos().listar();
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy");
-        String[] op = new String[ventas.size()];
-        for (int i = 0; i < ventas.size(); i++) {
-            Venta v = ventas.get(i);
-            op[i] = "#" + v.getIdVenta() + "  ·  " + (v.getFechaVenta() == null ? "" : sdf.format(v.getFechaVenta()))
-                    + "  ·  " + nombreCliente(clientes, v.getIdCliente())
-                    + "  ·  " + UiTheme.gs(v.getTotal());
-        }
-        String sel = (String) javax.swing.JOptionPane.showInputDialog(this, "Elija la venta:", "Ticket de venta",
-                javax.swing.JOptionPane.QUESTION_MESSAGE, null, op, op[0]);
-        if (sel == null) return;
-        final int idx = java.util.Arrays.asList(op).indexOf(sel);
-        if (idx < 0) return;
-        generar(() -> ReportesMetodos.ticketVenta(ventas.get(idx).getIdVenta()), "Ticket de venta");
-    }
-
-    private void elegirOrden() {
-        List<OrdenServicio> ordenes = new OrdenServicioMetodos().listar();
-        if (ordenes.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Todavía no hay órdenes de servicio registradas");
-            return;
-        }
-        List<Cliente> clientes = new ClienteMetodos().listar();
-        String[] op = new String[ordenes.size()];
-        for (int i = 0; i < ordenes.size(); i++) {
-            OrdenServicio o = ordenes.get(i);
-            op[i] = "#" + o.getIdOrden() + "  ·  " + nombreCliente(clientes, o.getIdCliente())
-                    + "  ·  " + (o.getEstado() == null ? "" : o.getEstado())
-                    + "  ·  " + UiTheme.gs(o.getCostoReparacion());
-        }
-        String sel = (String) javax.swing.JOptionPane.showInputDialog(this, "Elija la orden de servicio:",
-                "Comprobante de orden", javax.swing.JOptionPane.QUESTION_MESSAGE, null, op, op[0]);
-        if (sel == null) return;
-        final int idx = java.util.Arrays.asList(op).indexOf(sel);
-        if (idx < 0) return;
-        generar(() -> ReportesMetodos.comprobanteOrden(ordenes.get(idx).getIdOrden()), "Comprobante de orden");
-    }
-
-    private void abrirCarpeta() {
-        java.io.File d = new java.io.File("reportes_generados");
-        if (!d.exists()) d.mkdirs();
-        ReportesMetodos.abrir(d);
-    }
-
-    /** Elige una venta y emite (o reimprime) su Factura Electronica. */
-    private void elegirVentaFactura() {
-        List<Venta> ventas = new VentaMetodos().listar();
-        if (ventas.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Todavía no hay ventas registradas");
-            return;
-        }
-        List<Cliente> clientes = new ClienteMetodos().listar();
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy");
-        String[] op = new String[ventas.size()];
-        for (int i = 0; i < ventas.size(); i++) {
-            Venta v = ventas.get(i);
-            String doc = (v.getCdc() == null || v.getCdc().isEmpty())
-                    ? "sin factura" : ("factura N° " + v.getNroFactura());
-            op[i] = "#" + v.getIdVenta() + "  ·  " + (v.getFechaVenta() == null ? "" : sdf.format(v.getFechaVenta()))
-                    + "  ·  " + nombreCliente(clientes, v.getIdCliente())
-                    + "  ·  " + UiTheme.gs(v.getTotal()) + "  ·  " + doc;
-        }
-        String sel = (String) javax.swing.JOptionPane.showInputDialog(this, "Elija la venta:", "Factura electrónica",
-                javax.swing.JOptionPane.QUESTION_MESSAGE, null, op, op[0]);
-        if (sel == null) return;
-        final int idx = java.util.Arrays.asList(op).indexOf(sel);
-        if (idx < 0) return;
-        int id = ventas.get(idx).getIdVenta();
-        try {
-            java.io.File pdf = ReportesMetodos.facturaElectronica(id);
-            Venta vf = new VentaMetodos().buscar(id);
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Factura electrónica emitida.\n"
-                    + "N°: " + (vf == null ? "" : vf.getNroFactura()) + "\n"
-                    + "CDC: " + (vf == null ? "" : vf.getCdc()) + "\n\n" + pdf.getAbsolutePath());
-            ReportesMetodos.abrir(pdf);
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "No se pudo emitir la factura:\n" + e.getMessage());
-        }
-    }
-
-    private String nombreCliente(List<Cliente> clientes, int id) {
-        for (Cliente c : clientes) {
-            if (c.getIdCliente() == id) {
-                return (c.getNombre() == null ? "" : c.getNombre()) + " "
-                        + (c.getApellido() == null ? "" : c.getApellido());
-            }
-        }
-        return "Cliente #" + id;
+        // Los botones se conectan desde el disenador (pestana Events ->
+        // actionPerformed).
     }
 
     /**
@@ -265,6 +109,7 @@ public class FormReportes extends javax.swing.JPanel {
         btnInventario.setBorderPainted(false);
         btnInventario.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnInventario.setFocusPainted(false);
+        btnInventario.addActionListener(this::btnInventarioActionPerformed);
         cardInventario.add(btnInventario, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 72, 200, 40));
 
         panelContenido.add(cardInventario, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 25, 470, 135));
@@ -289,6 +134,7 @@ public class FormReportes extends javax.swing.JPanel {
         btnClientes.setBorderPainted(false);
         btnClientes.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnClientes.setFocusPainted(false);
+        btnClientes.addActionListener(this::btnClientesActionPerformed);
         cardClientes.add(btnClientes, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 72, 200, 40));
 
         panelContenido.add(cardClientes, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 175, 470, 135));
@@ -313,11 +159,13 @@ public class FormReportes extends javax.swing.JPanel {
         btnVentasTodas.setBorderPainted(false);
         btnVentasTodas.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnVentasTodas.setFocusPainted(false);
+        btnVentasTodas.addActionListener(this::btnVentasTodasActionPerformed);
         cardVentas.add(btnVentasTodas, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 72, 200, 40));
 
         btnVentasRango.setBackground(new java.awt.Color(51, 65, 85));
         btnVentasRango.setForeground(new java.awt.Color(243, 244, 246));
         btnVentasRango.setText("Elegir rango de fechas...");
+        btnVentasRango.addActionListener(this::btnVentasRangoActionPerformed);
         cardVentas.add(btnVentasRango, new org.netbeans.lib.awtextra.AbsoluteConstraints(230, 72, 200, 40));
 
         panelContenido.add(cardVentas, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 325, 470, 135));
@@ -342,6 +190,7 @@ public class FormReportes extends javax.swing.JPanel {
         btnTicket.setBorderPainted(false);
         btnTicket.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnTicket.setFocusPainted(false);
+        btnTicket.addActionListener(this::btnTicketActionPerformed);
         cardTicket.add(btnTicket, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 72, 200, 40));
 
         panelContenido.add(cardTicket, new org.netbeans.lib.awtextra.AbsoluteConstraints(555, 25, 470, 135));
@@ -366,6 +215,7 @@ public class FormReportes extends javax.swing.JPanel {
         btnOrden.setBorderPainted(false);
         btnOrden.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnOrden.setFocusPainted(false);
+        btnOrden.addActionListener(this::btnOrdenActionPerformed);
         cardOrden.add(btnOrden, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 72, 200, 40));
 
         panelContenido.add(cardOrden, new org.netbeans.lib.awtextra.AbsoluteConstraints(555, 175, 470, 135));
@@ -386,6 +236,7 @@ public class FormReportes extends javax.swing.JPanel {
         btnCarpeta.setBackground(new java.awt.Color(51, 65, 85));
         btnCarpeta.setForeground(new java.awt.Color(243, 244, 246));
         btnCarpeta.setText("Abrir carpeta");
+        btnCarpeta.addActionListener(this::btnCarpetaActionPerformed);
         cardCarpeta.add(btnCarpeta, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 72, 200, 40));
 
         panelContenido.add(cardCarpeta, new org.netbeans.lib.awtextra.AbsoluteConstraints(555, 325, 470, 135));
@@ -410,6 +261,7 @@ public class FormReportes extends javax.swing.JPanel {
         btnFacturaReporte.setBorderPainted(false);
         btnFacturaReporte.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnFacturaReporte.setFocusPainted(false);
+        btnFacturaReporte.addActionListener(this::btnFacturaReporteActionPerformed);
         cardFactura.add(btnFacturaReporte, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 72, 220, 40));
 
         panelContenido.add(cardFactura, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 475, 1000, 135));
@@ -427,6 +279,38 @@ public class FormReportes extends javax.swing.JPanel {
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 644, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnInventarioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInventarioActionPerformed
+        ReportesMetodos.generarInventario();
+    }//GEN-LAST:event_btnInventarioActionPerformed
+
+    private void btnClientesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClientesActionPerformed
+        ReportesMetodos.generarClientes();
+    }//GEN-LAST:event_btnClientesActionPerformed
+
+    private void btnVentasTodasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVentasTodasActionPerformed
+        ReportesMetodos.generarVentasTodas();
+    }//GEN-LAST:event_btnVentasTodasActionPerformed
+
+    private void btnVentasRangoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVentasRangoActionPerformed
+        ReportesMetodos.generarVentasPorRango();
+    }//GEN-LAST:event_btnVentasRangoActionPerformed
+
+    private void btnTicketActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTicketActionPerformed
+        ReportesMetodos.elegirTicketVenta();
+    }//GEN-LAST:event_btnTicketActionPerformed
+
+    private void btnOrdenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOrdenActionPerformed
+        ReportesMetodos.elegirComprobanteOrden();
+    }//GEN-LAST:event_btnOrdenActionPerformed
+
+    private void btnCarpetaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCarpetaActionPerformed
+        ReportesMetodos.abrirCarpetaReportes();
+    }//GEN-LAST:event_btnCarpetaActionPerformed
+
+    private void btnFacturaReporteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFacturaReporteActionPerformed
+        ReportesMetodos.emitirFacturaElectronica();
+    }//GEN-LAST:event_btnFacturaReporteActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

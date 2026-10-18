@@ -397,4 +397,167 @@ public class ReportesMetodos {
 
         return pdfComprobante("factura_electronica.jrxml", params, filas, "factura_venta_" + idVenta);
     }
+
+    // ================== pantalla de reportes (acciones de la UI) ==================
+
+    /**
+     * Ejecuta la generacion del PDF, avisa el resultado y lo abre si salio bien.
+     */
+    private static void generar(java.util.concurrent.Callable<File> tarea, String titulo) {
+        try {
+            File pdf = tarea.call();
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    titulo + " generado:\n" + pdf.getAbsolutePath());
+            abrir(pdf);
+        } catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    "No se pudo generar " + titulo.toLowerCase() + ":\n" + e.getMessage());
+        }
+    }
+
+    /** Boton "Generar PDF" de la tarjeta Inventario. */
+    public static void generarInventario() {
+        generar(() -> inventario(), "Reporte de inventario");
+    }
+
+    /** Boton "Generar PDF" de la tarjeta Clientes. */
+    public static void generarClientes() {
+        generar(() -> clientes(), "Reporte de clientes");
+    }
+
+    /** Boton "Todas las ventas". */
+    public static void generarVentasTodas() {
+        generar(() -> ventas(null, null), "Reporte de ventas");
+    }
+
+    /**
+     * Boton "Elegir rango de fechas...": pide las dos fechas y genera el reporte
+     * de ventas de ese rango.
+     */
+    public static void generarVentasPorRango() {
+        com.toedter.calendar.JDateChooser d1 = new com.toedter.calendar.JDateChooser();
+        com.toedter.calendar.JDateChooser d2 = new com.toedter.calendar.JDateChooser();
+        d1.setDateFormatString("dd/MM/yyyy");
+        d2.setDateFormatString("dd/MM/yyyy");
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        d2.setDate(cal.getTime());
+        cal.add(java.util.Calendar.DAY_OF_MONTH, -30);
+        d1.setDate(cal.getTime());
+        javax.swing.JPanel p = new javax.swing.JPanel(new java.awt.GridLayout(2, 2, 6, 6));
+        p.add(new javax.swing.JLabel("Desde:"));
+        p.add(d1);
+        p.add(new javax.swing.JLabel("Hasta:"));
+        p.add(d2);
+        int r = javax.swing.JOptionPane.showConfirmDialog(null, p, "Rango de fechas de ventas",
+                javax.swing.JOptionPane.OK_CANCEL_OPTION, javax.swing.JOptionPane.PLAIN_MESSAGE);
+        if (r != javax.swing.JOptionPane.OK_OPTION) return;
+        if (d1.getDate() == null || d2.getDate() == null) {
+            javax.swing.JOptionPane.showMessageDialog(null, "Elija las dos fechas");
+            return;
+        }
+        if (d1.getDate().after(d2.getDate())) {
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    "La fecha \"Desde\" no puede ser mayor que \"Hasta\"");
+            return;
+        }
+        java.text.SimpleDateFormat iso = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        generar(() -> ventas(iso.format(d1.getDate()), iso.format(d2.getDate())), "Reporte de ventas");
+    }
+
+    /**
+     * Arma el texto de cada venta para el desplegable del elegidor. Si
+     * conDocumento es true agrega el estado de la factura electronica.
+     */
+    private static String[] opcionesDeVentas(List<Venta> ventas, boolean conDocumento) {
+        List<Cliente> clientes = new ClienteMetodos().listar();
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy");
+        String[] op = new String[ventas.size()];
+        for (int i = 0; i < ventas.size(); i++) {
+            Venta v = ventas.get(i);
+            String doc = "";
+            if (conDocumento) {
+                doc = "  ·  " + ((v.getCdc() == null || v.getCdc().isEmpty())
+                        ? "sin factura" : ("factura N° " + v.getNroFactura()));
+            }
+            op[i] = "#" + v.getIdVenta() + "  ·  " + (v.getFechaVenta() == null ? "" : sdf.format(v.getFechaVenta()))
+                    + "  ·  " + nombreCliente(clientes, v.getIdCliente())
+                    + "  ·  " + UiTheme.gs(v.getTotal()) + doc;
+        }
+        return op;
+    }
+
+    /** Boton "Elegir venta..." de la tarjeta Ticket: genera el ticket de esa venta. */
+    public static void elegirTicketVenta() {
+        List<Venta> ventas = new VentaMetodos().listar();
+        if (ventas.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(null, "Todavía no hay ventas registradas");
+            return;
+        }
+        String[] op = opcionesDeVentas(ventas, false);
+        String sel = (String) javax.swing.JOptionPane.showInputDialog(null, "Elija la venta:", "Ticket de venta",
+                javax.swing.JOptionPane.QUESTION_MESSAGE, null, op, op[0]);
+        if (sel == null) return;
+        final int idx = java.util.Arrays.asList(op).indexOf(sel);
+        if (idx < 0) return;
+        generar(() -> ticketVenta(ventas.get(idx).getIdVenta()), "Ticket de venta");
+    }
+
+    /** Boton "Elegir orden...": genera el comprobante de la orden elegida. */
+    public static void elegirComprobanteOrden() {
+        List<OrdenServicio> ordenes = new OrdenServicioMetodos().listar();
+        if (ordenes.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(null, "Todavía no hay órdenes de servicio registradas");
+            return;
+        }
+        List<Cliente> clientes = new ClienteMetodos().listar();
+        String[] op = new String[ordenes.size()];
+        for (int i = 0; i < ordenes.size(); i++) {
+            OrdenServicio o = ordenes.get(i);
+            op[i] = "#" + o.getIdOrden() + "  ·  " + nombreCliente(clientes, o.getIdCliente())
+                    + "  ·  " + (o.getEstado() == null ? "" : o.getEstado())
+                    + "  ·  " + UiTheme.gs(o.getCostoReparacion());
+        }
+        String sel = (String) javax.swing.JOptionPane.showInputDialog(null, "Elija la orden de servicio:",
+                "Comprobante de orden", javax.swing.JOptionPane.QUESTION_MESSAGE, null, op, op[0]);
+        if (sel == null) return;
+        final int idx = java.util.Arrays.asList(op).indexOf(sel);
+        if (idx < 0) return;
+        generar(() -> comprobanteOrden(ordenes.get(idx).getIdOrden()), "Comprobante de orden");
+    }
+
+    /** Boton "Abrir carpeta": abre la carpeta donde se guardan los PDF. */
+    public static void abrirCarpetaReportes() {
+        abrir(carpeta());
+    }
+
+    /**
+     * Boton "Elegir venta..." de la tarjeta Factura: emite (o reimprime) la
+     * factura electronica de la venta elegida.
+     */
+    public static void emitirFacturaElectronica() {
+        List<Venta> ventas = new VentaMetodos().listar();
+        if (ventas.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(null, "Todavía no hay ventas registradas");
+            return;
+        }
+        String[] op = opcionesDeVentas(ventas, true);
+        String sel = (String) javax.swing.JOptionPane.showInputDialog(null, "Elija la venta:", "Factura electrónica",
+                javax.swing.JOptionPane.QUESTION_MESSAGE, null, op, op[0]);
+        if (sel == null) return;
+        final int idx = java.util.Arrays.asList(op).indexOf(sel);
+        if (idx < 0) return;
+        int id = ventas.get(idx).getIdVenta();
+        try {
+            File pdf = facturaElectronica(id);
+            Venta vf = new VentaMetodos().buscar(id);
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    "Factura electrónica emitida.\n"
+                    + "N°: " + (vf == null ? "" : vf.getNroFactura()) + "\n"
+                    + "CDC: " + (vf == null ? "" : vf.getCdc()) + "\n\n" + pdf.getAbsolutePath());
+            abrir(pdf);
+        } catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    "No se pudo emitir la factura:\n" + e.getMessage());
+        }
+    }
 }
