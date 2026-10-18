@@ -19,7 +19,9 @@ public class DashboardMetodos {
     /**
      * Lee los datos del sistema y los muestra en el panel.
      *
-     * @param lblIngresados  ordenes pendientes + en proceso
+     * @param lblIngresados  ordenes que siguen en el taller (pendientes, en
+     *                       proceso u otras, o sea las que no estan listas ni
+     *                       entregadas)
      * @param lblARetirar    ordenes completadas (listas para retirar)
      * @param lblTerminados  ordenes entregadas
      * @param lblStock       stock total de todos los productos
@@ -31,8 +33,7 @@ public class DashboardMetodos {
         OrdenServicioMetodos om = new OrdenServicioMetodos();
         ProductoMetodos pm = new ProductoMetodos();
 
-        lblIngresados.setText(String.valueOf(
-                om.contarPorEstado("PENDIENTE") + om.contarPorEstado("EN_PROCESO")));
+        lblIngresados.setText(String.valueOf(om.contarActivas()));
         lblARetirar.setText(String.valueOf(om.contarPorEstado("COMPLETADO")));
         lblTerminados.setText(String.valueOf(om.contarPorEstado("ENTREGADO")));
 

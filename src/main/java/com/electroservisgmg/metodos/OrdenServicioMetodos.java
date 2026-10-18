@@ -268,6 +268,21 @@ public class OrdenServicioMetodos {
         return lista;
     }
 
+    /**
+     * Ordenes que siguen en el taller: ni listas para retirar (COMPLETADO) ni
+     * entregadas (ENTREGADO). Asi cuenta tambien estados viejos o cargados a
+     * mano (por ejemplo "EN REPARACION") y ninguna orden queda sin contar.
+     */
+    public int contarActivas() {
+        String sql = "SELECT COUNT(*) FROM ordenservicio "
+                + "WHERE estado IS NULL OR estado NOT IN ('COMPLETADO','ENTREGADO')";
+        try (Connection con = Conexion.getConexion(); Statement st = con.createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) { System.out.println(e.getMessage()); }
+        return 0;
+    }
+
     public int contarPorEstado(String estado) {
         String sql = "SELECT COUNT(*) FROM ordenservicio WHERE estado=?";
         try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
