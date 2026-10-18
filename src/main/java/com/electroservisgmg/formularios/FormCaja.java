@@ -5,12 +5,7 @@
 package com.electroservisgmg.formularios;
 
 import com.electroservisgmg.clases.Caja;
-import com.electroservisgmg.clases.CajaMovimiento;
-import com.electroservisgmg.clases.Sesion;
-import com.electroservisgmg.clases.Usuario;
 import com.electroservisgmg.metodos.CajaMetodos;
-
-import java.util.List;
 
 /**
  * Apertura, movimientos y cierre de caja. Las ventas y compras dejan su
@@ -20,8 +15,6 @@ import java.util.List;
  */
 public class FormCaja extends javax.swing.JPanel {
 
-    private Caja cajaActual;
-
     /**
      * Creates new form FormCaja
      */
@@ -29,146 +22,42 @@ public class FormCaja extends javax.swing.JPanel {
         initComponents();
         UiTheme.styleTable(tblMovimientos);
         UiTheme.miles(txtMonto, true);
-        btnAbrir.addActionListener(e -> abrirCaja());
-        btnCerrar.addActionListener(e -> cerrarCaja());
-        btnRegistrar.addActionListener(e -> registrar());
-        btnLimpiar.addActionListener(e -> limpiar());
+        // Los botones se conectan desde el disenador (pestana Events ->
+        // actionPerformed); aca solo queda pintar el estado inicial.
         cargar();
     }
 
     // ---- lectura de datos ----
     private void cargar() {
-        Caja c = new CajaMetodos().cajaAbierta();
-        cajaActual = c;
-        if (c == null) {
-            lblEstado.setText("Caja CERRADA · presione \"Abrir caja\" para comenzar");
-            lblEstado.setForeground(new java.awt.Color(239, 68, 68));
-            lblIniV.setText(UiTheme.gs(0));
-            lblIngV.setText(UiTheme.gs(0));
-            lblEgrV.setText(UiTheme.gs(0));
-            lblSaldoV.setText(UiTheme.gs(0));
-            pintarMovimientos(null, new java.util.ArrayList<>());
-            btnAbrir.setEnabled(true);
-            btnCerrar.setEnabled(false);
-            btnRegistrar.setEnabled(false);
-            txtConcepto.setEnabled(false);
-            txtMonto.setEnabled(false);
-            cboTipo.setEnabled(false);
-            return;
-        }
-        CajaMetodos cm = new CajaMetodos();
-        double ini = c.getMontoInicial();
-        double ing = cm.sumarMovimientos(c.getIdCaja(), "INGRESO");
-        double egr = cm.sumarMovimientos(c.getIdCaja(), "EGRESO");
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
-        String desde = c.getFechaApertura() == null ? "" : sdf.format(c.getFechaApertura());
-        lblEstado.setText("Caja ABIERTA (id " + c.getIdCaja() + ") · desde " + desde);
-        lblEstado.setForeground(new java.awt.Color(34, 197, 94));
-        lblIniV.setText(UiTheme.gs(ini));
-        lblIngV.setText(UiTheme.gs(ing));
-        lblEgrV.setText(UiTheme.gs(egr));
-        lblSaldoV.setText(UiTheme.gs(ini + ing - egr));
-        pintarMovimientos(c, cm.listarMovimientos(c.getIdCaja()));
-        btnAbrir.setEnabled(false);
-        btnCerrar.setEnabled(true);
-        btnRegistrar.setEnabled(true);
-        txtConcepto.setEnabled(true);
-        txtMonto.setEnabled(true);
-        cboTipo.setEnabled(true);
-    }
-
-    private void pintarMovimientos(Caja c, List<CajaMovimiento> movs) {
-        String[] cols = {"ID", "Fecha", "Tipo", "Concepto", "Monto"};
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
-        Object[][] data = new Object[movs.size()][5];
-        for (int i = 0; i < movs.size(); i++) {
-            CajaMovimiento m = movs.get(i);
-            data[i] = new Object[]{m.getIdMovimiento(),
-                m.getFecha() == null ? "" : sdf.format(m.getFecha()),
-                m.getTipo(), m.getDescripcion(), UiTheme.gs(m.getMonto())};
-        }
-        tblMovimientos.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int cc) { return false; }
-        });
-        tblMovimientos.getColumnModel().getColumn(0).setPreferredWidth(50);
-        tblMovimientos.getColumnModel().getColumn(1).setPreferredWidth(140);
-        tblMovimientos.getColumnModel().getColumn(2).setPreferredWidth(110);
-        tblMovimientos.getColumnModel().getColumn(3).setPreferredWidth(420);
-        tblMovimientos.getColumnModel().getColumn(4).setPreferredWidth(140);
+        new CajaMetodos().cargar(tblMovimientos, lblEstado, lblIniV, lblIngV, lblEgrV, lblSaldoV,
+                btnAbrir, btnCerrar, btnRegistrar, txtConcepto, txtMonto, cboTipo);
         UiTheme.styleTable(tblMovimientos);
     }
 
     // ---- acciones ----
     private void abrirCaja() {
-        if (new CajaMetodos().cajaAbierta() != null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Ya hay una caja abierta");
-            cargar();
-            return;
-        }
-        String r = javax.swing.JOptionPane.showInputDialog(this,
-                "Monto inicial en caja (₲):", "0");
-        if (r == null) return;
-        double monto;
-        try {
-            monto = UiTheme.parseGs(r.trim().isEmpty() ? "0" : r.trim());
-            if (monto < 0) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Monto inicial inválido");
-            return;
-        }
-        Caja c = new Caja();
-        Usuario u = Sesion.getUsuario();
-        c.setIdUsuario(u != null ? u.getIdUsuario() : 1);
-        c.setFechaApertura(new java.util.Date());
-        c.setMontoInicial(monto);
-        boolean ok = new CajaMetodos().apertura(c);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Caja abierta" : "No se pudo abrir la caja");
+        new CajaMetodos().abrirCaja();
         cargar();
     }
 
     private void cerrarCaja() {
-        Caja c = new CajaMetodos().cajaAbierta();
+        CajaMetodos cm = new CajaMetodos();
+        Caja c = cm.cajaAbierta();
         if (c == null) {
             javax.swing.JOptionPane.showMessageDialog(this, "No hay ninguna caja abierta");
             cargar();
             return;
         }
-        CajaMetodos cm = new CajaMetodos();
-        double saldo = c.getMontoInicial() + cm.sumarMovimientos(c.getIdCaja(), "INGRESO")
-                - cm.sumarMovimientos(c.getIdCaja(), "EGRESO");
         int conf = javax.swing.JOptionPane.showConfirmDialog(this,
-                "¿Cerrar la caja #" + c.getIdCaja() + " con un saldo final de " + UiTheme.gs(saldo) + "?",
+                "¿Cerrar la caja #" + c.getIdCaja() + " con un saldo final de " + UiTheme.gs(cm.saldoDe(c)) + "?",
                 "Confirmar cierre", javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        boolean ok = new CajaMetodos().cierre(c.getIdCaja(), saldo);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Caja cerrada" : "No se pudo cerrar la caja");
+        cm.cerrarCaja();
         cargar();
     }
 
     private void registrar() {
-        Caja c = new CajaMetodos().cajaAbierta();
-        if (c == null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Primero abra la caja");
-            cargar();
-            return;
-        }
-        String concepto = txtConcepto.getText().trim();
-        if (concepto.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Escriba el concepto del movimiento");
-            return;
-        }
-        double monto;
-        try {
-            monto = UiTheme.parseGs(txtMonto.getText().trim());
-            if (monto <= 0) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "El monto debe ser un número mayor a 0");
-            return;
-        }
-        String tipo = String.valueOf(cboTipo.getSelectedItem());
-        boolean ok = new CajaMetodos().registrarMovimiento(c.getIdCaja(), tipo, monto, concepto);
-        if (ok) limpiar();
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Movimiento registrado" : "No se pudo registrar");
+        new CajaMetodos().registrar(txtConcepto, txtMonto, cboTipo);
         cargar();
     }
 
@@ -239,6 +128,7 @@ public class FormCaja extends javax.swing.JPanel {
         btnAbrir.setBorderPainted(false);
         btnAbrir.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnAbrir.setFocusPainted(false);
+        btnAbrir.addActionListener(this::btnAbrirActionPerformed);
         panelNorte.add(btnAbrir, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 75, 140, 35));
 
         btnCerrar.setBackground(new java.awt.Color(239, 68, 68));
@@ -248,6 +138,7 @@ public class FormCaja extends javax.swing.JPanel {
         btnCerrar.setBorderPainted(false);
         btnCerrar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnCerrar.setFocusPainted(false);
+        btnCerrar.addActionListener(this::btnCerrarActionPerformed);
         panelNorte.add(btnCerrar, new org.netbeans.lib.awtextra.AbsoluteConstraints(165, 75, 140, 35));
 
         lblEstado.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
@@ -376,11 +267,13 @@ public class FormCaja extends javax.swing.JPanel {
         btnRegistrar.setBorderPainted(false);
         btnRegistrar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnRegistrar.setFocusPainted(false);
+        btnRegistrar.addActionListener(this::btnRegistrarActionPerformed);
         panelForm.add(btnRegistrar, new org.netbeans.lib.awtextra.AbsoluteConstraints(645, 110, 130, 35));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
         btnLimpiar.setForeground(new java.awt.Color(243, 244, 246));
         btnLimpiar.setText("Limpiar");
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 110, 110, 35));
 
         jPanel1.add(panelForm, java.awt.BorderLayout.SOUTH);
@@ -396,6 +289,22 @@ public class FormCaja extends javax.swing.JPanel {
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 644, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnAbrirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAbrirActionPerformed
+        abrirCaja();
+    }//GEN-LAST:event_btnAbrirActionPerformed
+
+    private void btnCerrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCerrarActionPerformed
+        cerrarCaja();
+    }//GEN-LAST:event_btnCerrarActionPerformed
+
+    private void btnRegistrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarActionPerformed
+        registrar();
+    }//GEN-LAST:event_btnRegistrarActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
