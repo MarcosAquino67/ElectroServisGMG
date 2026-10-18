@@ -191,6 +191,29 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         }
     }
 
+    /**
+     * Elige el estado en el combo. Si la orden guardada tiene un estado que no
+     * esta en la lista (por ejemplo una vieja con "EN REPARACION"), lo agrega
+     * al combo antes de elegirlo. Asi el estado se ve y no se cambia solo al
+     * guardar la orden.
+     */
+    private void seleccionarEstado(String estado) {
+        if (estado == null || estado.trim().isEmpty()) {
+            if (cboEstado.getItemCount() > 0) cboEstado.setSelectedIndex(0);
+            return;
+        }
+        javax.swing.ComboBoxModel<String> modelo = cboEstado.getModel();
+        if (modelo instanceof javax.swing.MutableComboBoxModel) {
+            javax.swing.MutableComboBoxModel<String> m = (javax.swing.MutableComboBoxModel<String>) modelo;
+            boolean esta = false;
+            for (int i = 0; i < m.getSize(); i++) {
+                if (estado.equals(m.getElementAt(i))) { esta = true; break; }
+            }
+            if (!esta) m.addElement(estado);
+        }
+        cboEstado.setSelectedItem(estado);
+    }
+
     // ---- mapa para tabla ----
     // ---- tabla ----
     private void cargarTabla(String filtro) {
@@ -207,6 +230,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         txtId.setText("");
         if (cboCliente.getItemCount() > 0) cboCliente.setSelectedIndex(0);
         cargarEquipos();
+        cargarEstados(); // vuelve a la lista estandar (saca estados viejos que se hayan agregado)
         if (cboEstado.getItemCount() > 0) cboEstado.setSelectedItem("PENDIENTE");
         txtCosto.setText("");
         txtDiagnostico.setText("");
@@ -226,7 +250,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
                 seleccionarCliente(o.getIdCliente());
                 cargarEquipos();
                 seleccionarEquipo(o.getIdEquipo());
-                cboEstado.setSelectedItem(o.getEstado());
+                seleccionarEstado(o.getEstado());
                 txtCosto.setText(String.valueOf(Math.round(o.getCostoReparacion())));
                 txtDiagnostico.setText(o.getDiagnostico() == null ? "" : o.getDiagnostico());
                 txtObservaciones.setText(o.getObservaciones() == null ? "" : o.getObservaciones());
