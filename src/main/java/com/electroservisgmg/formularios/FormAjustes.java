@@ -29,7 +29,6 @@ public class FormAjustes extends javax.swing.JPanel {
         actualizarLabelTema();
         btnOscuro.addActionListener(e -> { UiTheme.aplicarTema(true); actualizarLabelTema(); });
         btnClaro.addActionListener(e -> { UiTheme.aplicarTema(false); actualizarLabelTema(); });
-        btnGuardarDefecto.addActionListener(e -> guardarDefecto());
         btnRespaldo.addActionListener(e -> FormRespaldo.mostrar(this));
         btnRespaldo.setToolTipText("Guarda una copia de toda la base en un archivo .sql, o vuelve a cargar un respaldo anterior");
         btnElegirLogo.addActionListener(e -> elegirLogo());
@@ -561,7 +560,7 @@ public class FormAjustes extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnGuardarDefectoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarDefectoActionPerformed
-        // TODO add your handling code here:
+        guardarDefecto();
     }//GEN-LAST:event_btnGuardarDefectoActionPerformed
 
 
