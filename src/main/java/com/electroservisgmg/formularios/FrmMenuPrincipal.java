@@ -40,6 +40,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnCaja.addActionListener(e -> mostrarPanel(new FormCaja()));
         btnReportes.addActionListener(e -> mostrarPanel(new FormReportes()));
         refrescarUsuario();
+        aplicarPermisos();
         com.electroservisgmg.clases.Sesion.setListener(this::refrescarUsuario);
         mostrarPanel(new FormDashboard());
         lblFecha.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
@@ -50,6 +51,27 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         });
         actualizarFechaHora();
         new javax.swing.Timer(1000, e -> actualizarFechaHora()).start();
+    }
+
+    /**
+     * Permisos por rol: Usuarios y Ajustes son solo para ADMINISTRADOR.
+     * Los usuarios viejos sin rol cargado se toman como administradores, para
+     * que actualizar la base no deje a nadie afuera.
+     */
+    private void aplicarPermisos() {
+        com.electroservisgmg.clases.Usuario u = com.electroservisgmg.clases.Sesion.getUsuario();
+        String rol = (u == null || u.getRol() == null) ? "" : u.getRol().trim();
+        boolean admin = rol.isEmpty() || "ADMINISTRADOR".equalsIgnoreCase(rol);
+
+        btnUsuarios.setEnabled(admin);
+        btnAjustes.setEnabled(admin);
+        if (!admin) {
+            java.awt.Color apagado = new java.awt.Color(100, 116, 139);
+            btnUsuarios.setForeground(apagado);
+            btnAjustes.setForeground(apagado);
+            btnUsuarios.setToolTipText("Solo para administradores");
+            btnAjustes.setToolTipText("Solo para administradores");
+        }
     }
 
     private void actualizarFechaHora() {

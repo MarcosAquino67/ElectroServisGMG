@@ -113,6 +113,7 @@ public class VentaMetodos {
                 try { v.setTipoDocumento(rs.getString("tipoDocumento")); } catch (SQLException ignored) {}
                 try { v.setNroFactura(rs.getInt("nroFactura")); } catch (SQLException ignored) {}
                 try { v.setCdc(rs.getString("cdc")); } catch (SQLException ignored) {}
+                try { v.setEstado(rs.getString("estado")); } catch (SQLException ignored) {}
                 lista.add(v);
             }
         } catch (SQLException e) { System.err.println(e.getMessage()); }
@@ -167,5 +168,39 @@ public class VentaMetodos {
         v.setNroFactura(nro);
         v.setCdc(cdc);
         return v;
+    }
+
+    /**
+     * Anula una venta: la marca como ANULADA y devuelve al stock todo lo que
+     * habia descontado. No se borra la fila a proposito: asi el numero de
+     * factura no se vuelve a usar.
+     * Todo en una transaccion: si algo falla no queda a medias.
+     */
+    public boolean anular(int idVenta) {
+        String sqlEstado = "UPDATE venta SET estado='ANULADA' "
+                + "WHERE idVenta=? AND (estado IS NULL OR estado<>'ANULADA')";
+        String sqlStock = "UPDATE producto p JOIN detalleventa d ON d.idProducto=p.idProducto "
+                + "SET p.stock = p.stock + d.cantidad WHERE d.idVenta=?";
+        Connection con = null;
+        try {
+            con = Conexion.nuevaConexion();
+            con.setAutoCommit(false);
+            try (PreparedStatement ps = con.prepareStatement(sqlEstado)) {
+                ps.setInt(1, idVenta);
+                if (ps.executeUpdate() == 0) { con.rollback(); return false; }
+            }
+            try (PreparedStatement ps = con.prepareStatement(sqlStock)) {
+                ps.setInt(1, idVenta);
+                ps.executeUpdate();
+            }
+            con.commit();
+            return true;
+        } catch (SQLException e) {
+            try { if (con != null) con.rollback(); } catch (SQLException ex) {}
+            System.err.println("Error anular venta: " + e.getMessage());
+            return false;
+        } finally {
+            try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException e) {}
+        }
     }
 }

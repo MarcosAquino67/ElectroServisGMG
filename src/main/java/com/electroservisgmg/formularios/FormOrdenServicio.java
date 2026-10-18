@@ -41,6 +41,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         btnLimpiar.addActionListener(e -> limpiar());
         btnRetirar.addActionListener(e -> retirar());
         crearBotonImprimir();
+        crearBotonRepuestos();
         txtBuscar.addActionListener(e -> buscar());
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
@@ -64,6 +65,77 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         btnImprimir.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnImprimir.addActionListener(e -> imprimir());
         panelNorte.add(btnImprimir, new org.netbeans.lib.awtextra.AbsoluteConstraints(915, 75, 150, 35));
+    }
+
+    // ---- repuestos de la orden (fuera del GEN: no estan en el diseno de Matisse) ----
+
+    private javax.swing.JLabel lblRepuestos;
+
+    /**
+     * Boton para cargar los repuestos usados en la reparacion. Va en el espacio
+     * libre de abajo del formulario.
+     */
+    private void crearBotonRepuestos() {
+        javax.swing.JButton btn = new javax.swing.JButton("Repuestos usados…");
+        btn.setBackground(new java.awt.Color(51, 65, 85));
+        btn.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btn.setForeground(new java.awt.Color(243, 244, 246));
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btn.setToolTipText("Carga los repuestos que se usaron: se descuentan del stock y se suman al costo de la reparación");
+        btn.addActionListener(e -> abrirRepuestos());
+        jPanel3.add(btn, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 160, 190, 32));
+
+        lblRepuestos = new javax.swing.JLabel(" ");
+        lblRepuestos.setFont(new java.awt.Font("Segoe UI", 0, 12));
+        lblRepuestos.setForeground(new java.awt.Color(156, 163, 175));
+        jPanel3.add(lblRepuestos, new org.netbeans.lib.awtextra.AbsoluteConstraints(225, 160, 700, 32));
+    }
+
+    /** Abre la ventana de repuestos de la orden elegida en la lista. */
+    private void abrirRepuestos() {
+        int fila = tblOrdenes.getSelectedRow();
+        if (fila < 0) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Seleccione en la lista la orden que quiere cargarle repuestos");
+            return;
+        }
+        int id = ((Number) tblOrdenes.getValueAt(fila, 0)).intValue();
+        String detalle = tblOrdenes.getValueAt(fila, 1) + " · " + tblOrdenes.getValueAt(fila, 2);
+        FormRepuestosOrden.mostrar(this, id, detalle, this::despuesDeRepuestos);
+    }
+
+    /** Se llama al cerrar cambios en los repuestos: el costo de la orden cambió. */
+    private void despuesDeRepuestos() {
+        llenarDesdeFila();
+        mostrarResumenRepuestos();
+    }
+
+    /** Linea de abajo con el detalle de los repuestos de la orden elegida. */
+    private void mostrarResumenRepuestos() {
+        if (lblRepuestos == null) return;
+        int fila = tblOrdenes.getSelectedRow();
+        if (fila < 0) {
+            lblRepuestos.setText(" ");
+            return;
+        }
+        int id = ((Number) tblOrdenes.getValueAt(fila, 0)).intValue();
+        java.util.List<com.electroservisgmg.clases.OrdenRepuesto> rep =
+                new com.electroservisgmg.metodos.OrdenRepuestoMetodos().listar(id);
+        if (rep.isEmpty()) {
+            lblRepuestos.setText("Sin repuestos cargados en esta orden");
+            return;
+        }
+        double total = 0;
+        int unidades = 0;
+        for (com.electroservisgmg.clases.OrdenRepuesto r : rep) {
+            total += r.getSubtotal();
+            unidades += r.getCantidad();
+        }
+        lblRepuestos.setText(rep.size() + (rep.size() == 1 ? " repuesto" : " repuestos")
+                + " (" + unidades + (unidades == 1 ? " unidad" : " unidades") + ") · "
+                + UiTheme.gs(total) + " ya incluidos en el costo de la reparación");
     }
 
     /** Comprobante por duplicado (taller y cliente) de la orden seleccionada. */
@@ -192,6 +264,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
         txtDiagnostico.setText("");
         txtObservaciones.setText("");
         tblOrdenes.clearSelection();
+        if (lblRepuestos != null) lblRepuestos.setText(" ");
         txtDiagnostico.requestFocus();
     }
 
@@ -212,6 +285,7 @@ public class FormOrdenServicio extends javax.swing.JPanel {
                 break;
             }
         }
+        mostrarResumenRepuestos();
     }
 
     private void editar() {

@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS usuario (
 );
 
 -- Insertar usuario admin
+-- La clave se escribe aca en texto plano y el sistema la convierte sola a
+-- hash (SHA-256) la primera vez que ese usuario inicia sesion.
+-- Si se vuelve a correr este script, la clave del admin vuelve a ser '2307':
+-- sirve como "reset" si alguien se olvido la contrasena.
 INSERT INTO usuario (nombre, usuario, clave, rol, estado)
 VALUES ('Marcos', 'Marcos', '2307', 'ADMINISTRADOR', 'ACTIVO')
 ON DUPLICATE KEY UPDATE clave='2307', estado='ACTIVO';

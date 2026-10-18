@@ -3,6 +3,7 @@ target/
 tema.cfg
 respaldo_formularios/
 reportes_generados/
+respaldos/
 nbproject/private/
 .vscode/
 *.log

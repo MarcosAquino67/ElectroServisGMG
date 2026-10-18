@@ -114,11 +114,18 @@ public class FormProveedores extends javax.swing.JPanel {
         p.setEmail(txtEmail.getText().trim());
         p.setDireccion(txtDireccion.getText().trim());
         ProveedorMetodos pm = new ProveedorMetodos();
+        int idActual = txtId.getText().trim().isEmpty() ? -1 : Integer.parseInt(txtId.getText().trim());
+        if (pm.existeRuc(p.getRuc(), idActual)) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Ya hay otro proveedor cargado con el RUC " + p.getRuc() + ".\n"
+                    + "Revise la lista antes de guardar.");
+            return;
+        }
         boolean ok;
         if (txtId.getText().trim().isEmpty()) {
             ok = pm.insertar(p);
         } else {
-            p.setIdProveedor(Integer.parseInt(txtId.getText().trim()));
+            p.setIdProveedor(idActual);
             ok = pm.modificar(p);
         }
         javax.swing.JOptionPane.showMessageDialog(this, ok ? "Guardado correctamente" : "Error al guardar");

@@ -20,6 +20,7 @@ public class FormUsuarios extends javax.swing.JPanel {
         initComponents();
         echoOriginal = txtClave.getEchoChar();
         crearBotonOjo();
+        crearComboRol();
         cboEstado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"ACTIVO", "INACTIVO"}));
         UiTheme.styleTable(tblUsuarios);
         cargarTabla("");
@@ -38,6 +39,7 @@ public class FormUsuarios extends javax.swing.JPanel {
         tblUsuarios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) llenarDesdeFila();
         });
+        limpiar();   // arranca con el formulario vacio y el rol USUARIO puesto
     }
 
     // ---- ojito ver / ocultar clave (fuera del GEN) ----
@@ -57,6 +59,41 @@ public class FormUsuarios extends javax.swing.JPanel {
         btnOjo.addActionListener(e -> alternarOjo());
         actualizarIconoOjo();
         panelForm.add(btnOjo, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 40, 36, 35));
+    }
+
+    // ---- rol del usuario (fuera del GEN) ----
+    private javax.swing.JComboBox<String> cboRol;
+
+    /**
+     * Combo de rol, agregado en tiempo de ejecucion. Queda abajo a la derecha,
+     * alineado con el combo de estado.
+     */
+    private void crearComboRol() {
+        javax.swing.JLabel lblRol = new javax.swing.JLabel("Rol:");
+        lblRol.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        lblRol.setForeground(new java.awt.Color(156, 163, 175));
+        lblRol.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        panelForm.add(lblRol, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 90, 120, 38));
+
+        cboRol = new javax.swing.JComboBox<>(new javax.swing.DefaultComboBoxModel<>(
+                new String[]{"ADMINISTRADOR", "USUARIO"}));
+        cboRol.setBackground(new java.awt.Color(15, 23, 42));
+        cboRol.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        cboRol.setForeground(new java.awt.Color(243, 244, 246));
+        cboRol.setToolTipText("El ADMINISTRADOR entra a todo; el USUARIO no ve Usuarios ni Ajustes");
+        panelForm.add(cboRol, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 90, 140, 38));
+    }
+
+    /** Rol elegido en el combo. */
+    private String rolSeleccionado() {
+        Object r = cboRol == null ? null : cboRol.getSelectedItem();
+        return r == null ? "USUARIO" : r.toString();
+    }
+
+    /** Marca en el combo el rol que trae el usuario. */
+    private void seleccionarRol(String rol) {
+        if (cboRol == null) return;
+        cboRol.setSelectedItem("ADMINISTRADOR".equalsIgnoreCase(String.valueOf(rol)) ? "ADMINISTRADOR" : "USUARIO");
     }
 
     private void alternarOjo() {
@@ -96,16 +133,17 @@ public class FormUsuarios extends javax.swing.JPanel {
             if (f.isEmpty() || u.getNombre().toLowerCase().contains(f)
                     || u.getUsuario().toLowerCase().contains(f)) fil.add(u);
         }
-        String[] cols = {"ID", "Nombre", "Usuario", "Estado"};
-        Object[][] data = new Object[fil.size()][4];
+        String[] cols = {"ID", "Nombre", "Usuario", "Rol", "Estado"};
+        Object[][] data = new Object[fil.size()][5];
         for (int i = 0; i < fil.size(); i++) {
             Usuario u = fil.get(i);
-            data[i] = new Object[]{u.getIdUsuario(), u.getNombre(), u.getUsuario(), u.getEstado()};
+            data[i] = new Object[]{u.getIdUsuario(), u.getNombre(), u.getUsuario(), u.getRol(), u.getEstado()};
         }
         tblUsuarios.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         });
         UiTheme.styleTable(tblUsuarios);
+        tblUsuarios.getColumnModel().getColumn(3).setPreferredWidth(140);   // "ADMINISTRADOR" completo
     }
 
     private void limpiar() {
@@ -114,6 +152,7 @@ public class FormUsuarios extends javax.swing.JPanel {
         txtUsuario.setText("");
         txtClave.setText("");
         cboEstado.setSelectedItem("ACTIVO");
+        seleccionarRol("USUARIO");
         tblUsuarios.clearSelection();
         txtNombre1.requestFocus();
     }
@@ -129,7 +168,8 @@ public class FormUsuarios extends javax.swing.JPanel {
         txtNombre1.setText(String.valueOf(tblUsuarios.getValueAt(fila, 1)));
         txtUsuario.setText(String.valueOf(tblUsuarios.getValueAt(fila, 2)));
         txtClave.setText("");
-        cboEstado.setSelectedItem(String.valueOf(tblUsuarios.getValueAt(fila, 3)));
+        cboEstado.setSelectedItem(String.valueOf(tblUsuarios.getValueAt(fila, 4)));
+        seleccionarRol(String.valueOf(tblUsuarios.getValueAt(fila, 3)));
     }
 
     private void editar() {
@@ -149,11 +189,29 @@ public class FormUsuarios extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Complete nombre, usuario y clave");
             return;
         }
+        if (pass.length() < 4) {
+            javax.swing.JOptionPane.showMessageDialog(this, "La clave debe tener al menos 4 caracteres");
+            return;
+        }
+        String rol = rolSeleccionado();
+        // si te estas editando a vos mismo no te podes sacar el rol de administrador:
+        // despues no podrias volver a entrar a Usuarios ni a Ajustes
+        Usuario sesion = com.electroservisgmg.clases.Sesion.getUsuario();
+        if (!txtId1.getText().trim().isEmpty() && sesion != null && !"ADMINISTRADOR".equalsIgnoreCase(rol)) {
+            try {
+                if (Integer.parseInt(txtId1.getText().trim()) == sesion.getIdUsuario()) {
+                    javax.swing.JOptionPane.showMessageDialog(this,
+                            "No te podés quitar a vos mismo el rol de ADMINISTRADOR:\n"
+                            + "después no podrías volver a entrar a Usuarios ni a Ajustes.");
+                    return;
+                }
+            } catch (NumberFormatException ignored) {}
+        }
         Usuario u = new Usuario();
         u.setNombre(nombre);
         u.setUsuario(user);
         u.setClave(pass);
-        u.setRol("ADMINISTRADOR");
+        u.setRol(rol);
         u.setEstado(cboEstado.getSelectedItem().toString());
         UsuarioMetodos um = new UsuarioMetodos();
         boolean ok;
@@ -194,6 +252,12 @@ public class FormUsuarios extends javax.swing.JPanel {
         int id = (int) tblUsuarios.getValueAt(fila, 0);
         if (id == 1) {
             javax.swing.JOptionPane.showMessageDialog(this, "No se puede eliminar el usuario principal");
+            return;
+        }
+        // no podes borrarte a vos mismo: seguirias en sesion como un usuario que ya no existe
+        com.electroservisgmg.clases.Usuario sesion = com.electroservisgmg.clases.Sesion.getUsuario();
+        if (sesion != null && id == sesion.getIdUsuario()) {
+            javax.swing.JOptionPane.showMessageDialog(this, "No te podés eliminar a vos mismo estando en sesión");
             return;
         }
         int c = javax.swing.JOptionPane.showConfirmDialog(this,

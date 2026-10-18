@@ -14,24 +14,6 @@ import com.electroservisgmg.metodos.EmpresaMetodos;
  */
 public class FormAjustes extends javax.swing.JPanel {
 
-    // ---- datos del emisor para la Factura Electronica (se crean en runtime) ----
-    private javax.swing.JTextField txtEmpRazonSocial;
-    private javax.swing.JTextField txtEmpNombreComercial;
-    private javax.swing.JTextField txtEmpRuc;
-    private javax.swing.JTextField txtEmpDv;
-    private javax.swing.JTextField txtEmpTimbrado;
-    private javax.swing.JTextField txtEmpDireccion;
-    private javax.swing.JTextField txtEmpCiudad;
-    private javax.swing.JTextField txtEmpTelefono;
-    private javax.swing.JTextField txtEmpEmail;
-    private javax.swing.JTextField txtEmpEstablecimiento;
-    private javax.swing.JTextField txtEmpPunto;
-    private javax.swing.JTextField txtEmpNroInicio;
-    private javax.swing.JTextField txtEmpNroFin;
-    private javax.swing.JTextArea txtEmpActividades;
-    private javax.swing.JComboBox<String> cboEmpContribuyente;
-    private com.toedter.calendar.JDateChooser dcEmpVigencia;
-    private javax.swing.JLabel lblEmpLogo;
     /** Archivo de logo elegido en Ajustes; null = usar el logo que viene con el sistema. */
     private String logoEmpresa;
 
@@ -48,112 +30,30 @@ public class FormAjustes extends javax.swing.JPanel {
         btnOscuro.addActionListener(e -> { UiTheme.aplicarTema(true); actualizarLabelTema(); });
         btnClaro.addActionListener(e -> { UiTheme.aplicarTema(false); actualizarLabelTema(); });
         btnGuardarDefecto.addActionListener(e -> guardarDefecto());
-        crearCardEmpresa();
+        btnRespaldo.addActionListener(e -> FormRespaldo.mostrar(this));
+        btnRespaldo.setToolTipText("Guarda una copia de toda la base en un archivo .sql, o vuelve a cargar un respaldo anterior");
+        btnElegirLogo.addActionListener(e -> elegirLogo());
+        btnQuitarLogo.addActionListener(e -> { logoEmpresa = null; actualizarPreviewLogo(); });
+        btnGuardarEmpresa.addActionListener(e -> guardarEmpresa());
+        // El cursor de texto y el editor del calendario no son propiedades del diseno.
+        for (javax.swing.JTextField f : new javax.swing.JTextField[]{
+            txtEmpRazonSocial, txtEmpNombreComercial, txtEmpRuc, txtEmpDv, txtEmpTimbrado,
+            txtEmpEstablecimiento, txtEmpPunto, txtEmpNroInicio, txtEmpNroFin,
+            txtEmpDireccion, txtEmpCiudad, txtEmpTelefono, txtEmpEmail}) {
+            f.setCaretColor(new java.awt.Color(243, 244, 246));
+        }
+        txtEmpActividades.setCaretColor(new java.awt.Color(243, 244, 246));
+        lblEmpLogoPreview.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         cargarEmpresa();
-    }
-
-    // ================= datos del emisor (Factura Electronica) =================
-
-    /** Construye la tarjeta "Empresa y timbrado" debajo de las dos tarjetas de tema. */
-    private void crearCardEmpresa() {
-        javax.swing.JPanel card = new javax.swing.JPanel();
-        card.setBackground(new java.awt.Color(30, 41, 59));
-        card.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
-        card.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        javax.swing.JLabel titulo = new javax.swing.JLabel("Empresa y timbrado (Factura Electrónica)");
-        titulo.setFont(new java.awt.Font("Segoe UI", 1, 15));
-        titulo.setForeground(new java.awt.Color(255, 255, 255));
-        card.add(titulo, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 15, 500, 25));
-
-        txtEmpRazonSocial = campo(card, "Razón social", 20, 45, 350);
-        txtEmpNombreComercial = campo(card, "Nombre comercial (ticket)", 380, 45, 350);
-        txtEmpRuc = campo(card, "RUC", 740, 45, 110);
-        txtEmpDv = campo(card, "DV", 860, 45, 50);
-        txtEmpTimbrado = campo(card, "Timbrado N°", 920, 45, 105);
-
-        etiqueta(card, "Vigencia desde", 20, 110, 150);
-        dcEmpVigencia = new com.toedter.calendar.JDateChooser();
-        dcEmpVigencia.setDateFormatString("dd/MM/yyyy");
-        dcEmpVigencia.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        dcEmpVigencia.setBackground(new java.awt.Color(15, 23, 42));
-        card.add(dcEmpVigencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 133, 150, 32));
+        // El editor del calendario se pinta al final: JDateChooser.setDate() le reinicia el color del texto.
         javax.swing.JTextField edVig = (javax.swing.JTextField) dcEmpVigencia.getDateEditor().getUiComponent();
         edVig.setBackground(new java.awt.Color(15, 23, 42));
         edVig.setForeground(new java.awt.Color(243, 244, 246));
         edVig.setCaretColor(new java.awt.Color(243, 244, 246));
         edVig.setFont(new java.awt.Font("Segoe UI", 0, 13));
-
-        etiqueta(card, "Tipo de contribuyente", 180, 110, 180);
-        cboEmpContribuyente = new javax.swing.JComboBox<>(
-                new String[]{"Jurídica (2)", "Física (1)"});
-        cboEmpContribuyente.setBackground(new java.awt.Color(15, 23, 42));
-        cboEmpContribuyente.setForeground(new java.awt.Color(243, 244, 246));
-        card.add(cboEmpContribuyente, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 133, 180, 32));
-
-        txtEmpEstablecimiento = campo(card, "Establecimiento", 370, 110, 110);
-        txtEmpPunto = campo(card, "Punto expedición", 490, 110, 110);
-        txtEmpNroInicio = campo(card, "N° factura desde", 610, 110, 110);
-        txtEmpNroFin = campo(card, "N° factura hasta", 730, 110, 110);
-
-        txtEmpDireccion = campo(card, "Dirección", 20, 175, 460);
-        txtEmpCiudad = campo(card, "Ciudad", 490, 175, 140);
-        txtEmpTelefono = campo(card, "Teléfono", 640, 175, 140);
-        txtEmpEmail = campo(card, "Correo electrónico", 790, 175, 235);
-
-        // ---- actividades economicas (van impresas en la factura) ----
-        etiqueta(card, "Actividades económicas (una por línea)", 20, 240, 400);
-        txtEmpActividades = new javax.swing.JTextArea(3, 20);
-        txtEmpActividades.setBackground(new java.awt.Color(15, 23, 42));
-        txtEmpActividades.setForeground(new java.awt.Color(243, 244, 246));
-        txtEmpActividades.setCaretColor(new java.awt.Color(243, 244, 246));
-        txtEmpActividades.setFont(new java.awt.Font("Segoe UI", 0, 12));
-        txtEmpActividades.setLineWrap(true);
-        txtEmpActividades.setWrapStyleWord(true);
-        javax.swing.JScrollPane scAct = new javax.swing.JScrollPane(txtEmpActividades);
-        scAct.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
-        card.add(scAct, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 263, 450, 62));
-
-        // ---- logo del emisor ----
-        etiqueta(card, "Logo de la factura", 490, 240, 150);
-        lblEmpLogo = new javax.swing.JLabel();
-        lblEmpLogo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblEmpLogo.setOpaque(true);
-        lblEmpLogo.setBackground(new java.awt.Color(248, 249, 250));
-        lblEmpLogo.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
-        card.add(lblEmpLogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 263, 110, 62));
-
-        javax.swing.JButton btnElegirLogo = new javax.swing.JButton("Elegir logo…");
-        btnElegirLogo.setBackground(new java.awt.Color(51, 65, 85));
-        btnElegirLogo.setFont(new java.awt.Font("Segoe UI", 1, 13));
-        btnElegirLogo.setForeground(new java.awt.Color(243, 244, 246));
-        btnElegirLogo.setBorderPainted(false);
-        btnElegirLogo.setFocusPainted(false);
-        btnElegirLogo.addActionListener(e -> elegirLogo());
-        card.add(btnElegirLogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 263, 130, 28));
-
-        javax.swing.JButton btnQuitarLogo = new javax.swing.JButton("Logo por defecto");
-        btnQuitarLogo.setBackground(new java.awt.Color(51, 65, 85));
-        btnQuitarLogo.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        btnQuitarLogo.setForeground(new java.awt.Color(243, 244, 246));
-        btnQuitarLogo.setBorderPainted(false);
-        btnQuitarLogo.setFocusPainted(false);
-        btnQuitarLogo.addActionListener(e -> { logoEmpresa = null; actualizarPreviewLogo(); });
-        card.add(btnQuitarLogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 297, 130, 28));
-
-        etiqueta(card, "Si no elegís un logo se usa el que viene con el sistema", 490, 333, 370);
-
-        javax.swing.JButton btnGuardarEmpresa = new javax.swing.JButton("Guardar datos");
-        btnGuardarEmpresa.setBackground(new java.awt.Color(34, 197, 94));
-        btnGuardarEmpresa.setFont(new java.awt.Font("Segoe UI", 1, 13));
-        btnGuardarEmpresa.setForeground(new java.awt.Color(255, 255, 255));
-        btnGuardarEmpresa.setBorderPainted(false);
-        btnGuardarEmpresa.setFocusPainted(false);
-        btnGuardarEmpresa.addActionListener(e -> guardarEmpresa());
-        card.add(btnGuardarEmpresa, new org.netbeans.lib.awtextra.AbsoluteConstraints(875, 340, 150, 38));
-
-        panelContenido.add(card, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 250, 1045, 395));
     }
+
+    // ================= datos del emisor (Factura Electronica) =================
 
     /** Abre un dialogo para elegir el archivo de logo de la factura. */
     private void elegirLogo() {
@@ -184,33 +84,14 @@ public class FormAjustes extends javax.swing.JPanel {
             bytes = EmpresaMetodos.logoBytes(soloLogo);
         }
         if (bytes == null) {
-            lblEmpLogo.setIcon(null);
-            lblEmpLogo.setText("sin logo");
+            lblEmpLogoPreview.setIcon(null);
+            lblEmpLogoPreview.setText("sin logo");
             return;
         }
         java.awt.Image img = new javax.swing.ImageIcon(bytes).getImage()
                 .getScaledInstance(60, 60, java.awt.Image.SCALE_SMOOTH);
-        lblEmpLogo.setText("");
-        lblEmpLogo.setIcon(new javax.swing.ImageIcon(img));
-    }
-
-    /** Etiqueta gris del formulario de empresa. */
-    private void etiqueta(javax.swing.JPanel card, String texto, int x, int y, int w) {
-        javax.swing.JLabel l = new javax.swing.JLabel(texto);
-        l.setForeground(new java.awt.Color(156, 163, 175));
-        card.add(l, new org.netbeans.lib.awtextra.AbsoluteConstraints(x, y, w, 20));
-    }
-
-    /** Etiqueta + campo de texto, alineados como el resto de la pantalla. */
-    private javax.swing.JTextField campo(javax.swing.JPanel card, String etiqueta, int x, int y, int w) {
-        etiqueta(card, etiqueta, x, y, w);
-        javax.swing.JTextField f = new javax.swing.JTextField();
-        f.setBackground(new java.awt.Color(15, 23, 42));
-        f.setForeground(new java.awt.Color(243, 244, 246));
-        f.setCaretColor(new java.awt.Color(243, 244, 246));
-        f.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        card.add(f, new org.netbeans.lib.awtextra.AbsoluteConstraints(x, y + 23, w, 32));
-        return f;
+        lblEmpLogoPreview.setText("");
+        lblEmpLogoPreview.setIcon(new javax.swing.ImageIcon(img));
     }
 
     /** Muestra los datos guardados del emisor. */
@@ -312,6 +193,48 @@ public class FormAjustes extends javax.swing.JPanel {
         rbUltimo = new javax.swing.JRadioButton();
         rbClaro = new javax.swing.JRadioButton();
         btnGuardarDefecto = new javax.swing.JButton();
+        btnRespaldo = new javax.swing.JButton();
+        panelCardEmpresa = new javax.swing.JPanel();
+        lblEmpTitulo = new javax.swing.JLabel();
+        lblEmpRazonSocial = new javax.swing.JLabel();
+        txtEmpRazonSocial = new javax.swing.JTextField();
+        lblEmpNombreComercial = new javax.swing.JLabel();
+        txtEmpNombreComercial = new javax.swing.JTextField();
+        lblEmpRuc = new javax.swing.JLabel();
+        txtEmpRuc = new javax.swing.JTextField();
+        lblEmpDv = new javax.swing.JLabel();
+        txtEmpDv = new javax.swing.JTextField();
+        lblEmpTimbrado = new javax.swing.JLabel();
+        txtEmpTimbrado = new javax.swing.JTextField();
+        lblEmpVigencia = new javax.swing.JLabel();
+        dcEmpVigencia = new com.toedter.calendar.JDateChooser();
+        lblEmpContribuyente = new javax.swing.JLabel();
+        cboEmpContribuyente = new javax.swing.JComboBox<>();
+        lblEmpEstablecimiento = new javax.swing.JLabel();
+        txtEmpEstablecimiento = new javax.swing.JTextField();
+        lblEmpPunto = new javax.swing.JLabel();
+        txtEmpPunto = new javax.swing.JTextField();
+        lblEmpNroInicio = new javax.swing.JLabel();
+        txtEmpNroInicio = new javax.swing.JTextField();
+        lblEmpNroFin = new javax.swing.JLabel();
+        txtEmpNroFin = new javax.swing.JTextField();
+        lblEmpDireccion = new javax.swing.JLabel();
+        txtEmpDireccion = new javax.swing.JTextField();
+        lblEmpCiudad = new javax.swing.JLabel();
+        txtEmpCiudad = new javax.swing.JTextField();
+        lblEmpTelefono = new javax.swing.JLabel();
+        txtEmpTelefono = new javax.swing.JTextField();
+        lblEmpEmail = new javax.swing.JLabel();
+        txtEmpEmail = new javax.swing.JTextField();
+        lblEmpActividades = new javax.swing.JLabel();
+        scEmpActividades = new javax.swing.JScrollPane();
+        txtEmpActividades = new javax.swing.JTextArea();
+        lblEmpLogo = new javax.swing.JLabel();
+        lblEmpLogoPreview = new javax.swing.JLabel();
+        btnElegirLogo = new javax.swing.JButton();
+        btnQuitarLogo = new javax.swing.JButton();
+        lblEmpLogoHint = new javax.swing.JLabel();
+        btnGuardarEmpresa = new javax.swing.JButton();
 
         jPanel1.setBackground(new java.awt.Color(18, 24, 36));
         jPanel1.setLayout(new java.awt.BorderLayout());
@@ -409,7 +332,215 @@ public class FormAjustes extends javax.swing.JPanel {
         btnGuardarDefecto.addActionListener(this::btnGuardarDefectoActionPerformed);
         panelCardDefecto.add(btnGuardarDefecto, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 165, 150, 38));
 
+        btnRespaldo.setBackground(new java.awt.Color(51, 65, 85));
+        btnRespaldo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnRespaldo.setForeground(new java.awt.Color(243, 244, 246));
+        btnRespaldo.setText("Respaldo de la base…");
+        btnRespaldo.setBorderPainted(false);
+        btnRespaldo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnRespaldo.setFocusPainted(false);
+        panelCardDefecto.add(btnRespaldo, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 165, 300, 38));
+
         panelContenido.add(panelCardDefecto, new org.netbeans.lib.awtextra.AbsoluteConstraints(530, 0, 515, 230));
+
+        panelCardEmpresa.setBackground(new java.awt.Color(30, 41, 59));
+        panelCardEmpresa.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
+        panelCardEmpresa.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        lblEmpTitulo.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
+        lblEmpTitulo.setForeground(new java.awt.Color(255, 255, 255));
+        lblEmpTitulo.setText("Empresa y timbrado (Factura Electrónica)");
+        panelCardEmpresa.add(lblEmpTitulo, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 15, 500, 25));
+
+        lblEmpRazonSocial.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpRazonSocial.setText("Razón social");
+        panelCardEmpresa.add(lblEmpRazonSocial, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 45, 350, 20));
+
+        txtEmpRazonSocial.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpRazonSocial.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpRazonSocial.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpRazonSocial, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 68, 350, 32));
+
+        lblEmpNombreComercial.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpNombreComercial.setText("Nombre comercial (ticket)");
+        panelCardEmpresa.add(lblEmpNombreComercial, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 45, 350, 20));
+
+        txtEmpNombreComercial.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpNombreComercial.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpNombreComercial.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpNombreComercial, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 68, 350, 32));
+
+        lblEmpRuc.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpRuc.setText("RUC");
+        panelCardEmpresa.add(lblEmpRuc, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 45, 110, 20));
+
+        txtEmpRuc.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpRuc.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpRuc.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpRuc, new org.netbeans.lib.awtextra.AbsoluteConstraints(740, 68, 110, 32));
+
+        lblEmpDv.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpDv.setText("DV");
+        panelCardEmpresa.add(lblEmpDv, new org.netbeans.lib.awtextra.AbsoluteConstraints(860, 45, 50, 20));
+
+        txtEmpDv.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpDv.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpDv.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpDv, new org.netbeans.lib.awtextra.AbsoluteConstraints(860, 68, 50, 32));
+
+        lblEmpTimbrado.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpTimbrado.setText("Timbrado N°");
+        panelCardEmpresa.add(lblEmpTimbrado, new org.netbeans.lib.awtextra.AbsoluteConstraints(920, 45, 105, 20));
+
+        txtEmpTimbrado.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpTimbrado.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpTimbrado.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpTimbrado, new org.netbeans.lib.awtextra.AbsoluteConstraints(920, 68, 105, 32));
+
+        lblEmpVigencia.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpVigencia.setText("Vigencia desde");
+        panelCardEmpresa.add(lblEmpVigencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 110, 150, 20));
+
+        dcEmpVigencia.setBackground(new java.awt.Color(15, 23, 42));
+        dcEmpVigencia.setDateFormatString("dd/MM/yyyy");
+        dcEmpVigencia.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        panelCardEmpresa.add(dcEmpVigencia, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 133, 150, 32));
+
+        lblEmpContribuyente.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpContribuyente.setText("Tipo de contribuyente");
+        panelCardEmpresa.add(lblEmpContribuyente, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 110, 180, 20));
+
+        cboEmpContribuyente.setBackground(new java.awt.Color(15, 23, 42));
+        cboEmpContribuyente.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        cboEmpContribuyente.setForeground(new java.awt.Color(243, 244, 246));
+        cboEmpContribuyente.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Jurídica (2)", "Física (1)" }));
+        panelCardEmpresa.add(cboEmpContribuyente, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 133, 180, 32));
+
+        lblEmpEstablecimiento.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpEstablecimiento.setText("Establecimiento");
+        panelCardEmpresa.add(lblEmpEstablecimiento, new org.netbeans.lib.awtextra.AbsoluteConstraints(370, 110, 110, 20));
+
+        txtEmpEstablecimiento.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpEstablecimiento.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpEstablecimiento.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpEstablecimiento, new org.netbeans.lib.awtextra.AbsoluteConstraints(370, 133, 110, 32));
+
+        lblEmpPunto.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpPunto.setText("Punto expedición");
+        panelCardEmpresa.add(lblEmpPunto, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 110, 110, 20));
+
+        txtEmpPunto.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpPunto.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpPunto.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpPunto, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 133, 110, 32));
+
+        lblEmpNroInicio.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpNroInicio.setText("N° factura desde");
+        panelCardEmpresa.add(lblEmpNroInicio, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 110, 110, 20));
+
+        txtEmpNroInicio.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpNroInicio.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpNroInicio.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpNroInicio, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 133, 110, 32));
+
+        lblEmpNroFin.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpNroFin.setText("N° factura hasta");
+        panelCardEmpresa.add(lblEmpNroFin, new org.netbeans.lib.awtextra.AbsoluteConstraints(730, 110, 110, 20));
+
+        txtEmpNroFin.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpNroFin.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpNroFin.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpNroFin, new org.netbeans.lib.awtextra.AbsoluteConstraints(730, 133, 110, 32));
+
+        lblEmpDireccion.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpDireccion.setText("Dirección");
+        panelCardEmpresa.add(lblEmpDireccion, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 175, 460, 20));
+
+        txtEmpDireccion.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpDireccion.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpDireccion.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpDireccion, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 198, 460, 32));
+
+        lblEmpCiudad.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpCiudad.setText("Ciudad");
+        panelCardEmpresa.add(lblEmpCiudad, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 175, 140, 20));
+
+        txtEmpCiudad.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpCiudad.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpCiudad.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpCiudad, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 198, 140, 32));
+
+        lblEmpTelefono.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpTelefono.setText("Teléfono");
+        panelCardEmpresa.add(lblEmpTelefono, new org.netbeans.lib.awtextra.AbsoluteConstraints(640, 175, 140, 20));
+
+        txtEmpTelefono.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpTelefono.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpTelefono.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpTelefono, new org.netbeans.lib.awtextra.AbsoluteConstraints(640, 198, 140, 32));
+
+        lblEmpEmail.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpEmail.setText("Correo electrónico");
+        panelCardEmpresa.add(lblEmpEmail, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 175, 235, 20));
+
+        txtEmpEmail.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpEmail.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtEmpEmail.setForeground(new java.awt.Color(243, 244, 246));
+        panelCardEmpresa.add(txtEmpEmail, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 198, 235, 32));
+
+        lblEmpActividades.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpActividades.setText("Actividades económicas (una por línea)");
+        panelCardEmpresa.add(lblEmpActividades, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 240, 400, 20));
+
+        scEmpActividades.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
+
+        txtEmpActividades.setBackground(new java.awt.Color(15, 23, 42));
+        txtEmpActividades.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
+        txtEmpActividades.setForeground(new java.awt.Color(243, 244, 246));
+        txtEmpActividades.setLineWrap(true);
+        txtEmpActividades.setWrapStyleWord(true);
+        scEmpActividades.setViewportView(txtEmpActividades);
+
+        panelCardEmpresa.add(scEmpActividades, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 263, 450, 62));
+
+        lblEmpLogo.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpLogo.setText("Logo de la factura");
+        panelCardEmpresa.add(lblEmpLogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 240, 150, 20));
+
+        lblEmpLogoPreview.setBackground(new java.awt.Color(248, 249, 250));
+        lblEmpLogoPreview.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
+        lblEmpLogoPreview.setOpaque(true);
+        panelCardEmpresa.add(lblEmpLogoPreview, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 263, 110, 62));
+
+        btnElegirLogo.setBackground(new java.awt.Color(51, 65, 85));
+        btnElegirLogo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnElegirLogo.setForeground(new java.awt.Color(243, 244, 246));
+        btnElegirLogo.setText("Elegir logo…");
+        btnElegirLogo.setBorderPainted(false);
+        btnElegirLogo.setFocusPainted(false);
+        panelCardEmpresa.add(btnElegirLogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 263, 130, 28));
+
+        btnQuitarLogo.setBackground(new java.awt.Color(51, 65, 85));
+        btnQuitarLogo.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnQuitarLogo.setForeground(new java.awt.Color(243, 244, 246));
+        btnQuitarLogo.setText("Logo por defecto");
+        btnQuitarLogo.setBorderPainted(false);
+        btnQuitarLogo.setFocusPainted(false);
+        panelCardEmpresa.add(btnQuitarLogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 297, 130, 28));
+
+        lblEmpLogoHint.setForeground(new java.awt.Color(156, 163, 175));
+        lblEmpLogoHint.setText("Si no elegís un logo se usa el que viene con el sistema");
+        panelCardEmpresa.add(lblEmpLogoHint, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 333, 370, 20));
+
+        btnGuardarEmpresa.setBackground(new java.awt.Color(34, 197, 94));
+        btnGuardarEmpresa.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnGuardarEmpresa.setForeground(new java.awt.Color(255, 255, 255));
+        btnGuardarEmpresa.setText("Guardar datos");
+        btnGuardarEmpresa.setBorderPainted(false);
+        btnGuardarEmpresa.setFocusPainted(false);
+        panelCardEmpresa.add(btnGuardarEmpresa, new org.netbeans.lib.awtextra.AbsoluteConstraints(875, 340, 150, 38));
+
+        panelContenido.add(panelCardEmpresa, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 250, 1045, 395));
 
         jPanel1.add(panelContenido, java.awt.BorderLayout.CENTER);
 
@@ -436,22 +567,64 @@ public class FormAjustes extends javax.swing.JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnClaro;
+    private javax.swing.JButton btnElegirLogo;
     private javax.swing.JButton btnGuardarDefecto;
+    private javax.swing.JButton btnGuardarEmpresa;
     private javax.swing.JButton btnOscuro;
+    private javax.swing.JButton btnQuitarLogo;
+    private javax.swing.JButton btnRespaldo;
     private javax.swing.ButtonGroup buttonGroup1;
+    private javax.swing.JComboBox<String> cboEmpContribuyente;
+    private com.toedter.calendar.JDateChooser dcEmpVigencia;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JLabel lblEmpActividades;
+    private javax.swing.JLabel lblEmpCiudad;
+    private javax.swing.JLabel lblEmpContribuyente;
+    private javax.swing.JLabel lblEmpDireccion;
+    private javax.swing.JLabel lblEmpDv;
+    private javax.swing.JLabel lblEmpEmail;
+    private javax.swing.JLabel lblEmpEstablecimiento;
+    private javax.swing.JLabel lblEmpLogo;
+    private javax.swing.JLabel lblEmpLogoHint;
+    private javax.swing.JLabel lblEmpLogoPreview;
+    private javax.swing.JLabel lblEmpNombreComercial;
+    private javax.swing.JLabel lblEmpNroFin;
+    private javax.swing.JLabel lblEmpNroInicio;
+    private javax.swing.JLabel lblEmpPunto;
+    private javax.swing.JLabel lblEmpRazonSocial;
+    private javax.swing.JLabel lblEmpRuc;
+    private javax.swing.JLabel lblEmpTelefono;
+    private javax.swing.JLabel lblEmpTimbrado;
+    private javax.swing.JLabel lblEmpTitulo;
+    private javax.swing.JLabel lblEmpVigencia;
     private javax.swing.JLabel lblHintTema;
     private javax.swing.JLabel lblTema;
     private javax.swing.JLabel lblTemaActual;
     private javax.swing.JLabel lblTitulo;
     private javax.swing.JPanel panelCardDefecto;
+    private javax.swing.JPanel panelCardEmpresa;
     private javax.swing.JPanel panelCardTema;
     private javax.swing.JPanel panelContenido;
     private javax.swing.JPanel panelTitulo;
     private javax.swing.JRadioButton rbClaro;
     private javax.swing.JRadioButton rbOscuro;
     private javax.swing.JRadioButton rbUltimo;
+    private javax.swing.JScrollPane scEmpActividades;
     private javax.swing.JLabel subtítulo;
+    private javax.swing.JTextArea txtEmpActividades;
+    private javax.swing.JTextField txtEmpCiudad;
+    private javax.swing.JTextField txtEmpDireccion;
+    private javax.swing.JTextField txtEmpDv;
+    private javax.swing.JTextField txtEmpEmail;
+    private javax.swing.JTextField txtEmpEstablecimiento;
+    private javax.swing.JTextField txtEmpNombreComercial;
+    private javax.swing.JTextField txtEmpNroFin;
+    private javax.swing.JTextField txtEmpNroInicio;
+    private javax.swing.JTextField txtEmpPunto;
+    private javax.swing.JTextField txtEmpRazonSocial;
+    private javax.swing.JTextField txtEmpRuc;
+    private javax.swing.JTextField txtEmpTelefono;
+    private javax.swing.JTextField txtEmpTimbrado;
     // End of variables declaration//GEN-END:variables
 }

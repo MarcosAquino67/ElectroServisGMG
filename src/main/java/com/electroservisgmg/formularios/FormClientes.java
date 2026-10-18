@@ -117,11 +117,18 @@ public class FormClientes extends javax.swing.JPanel {
         c.setEmail(txtEmail.getText().trim());
         c.setDireccion(txtDireccion.getText().trim());
         ClienteMetodos cm = new ClienteMetodos();
+        int idActual = txtId.getText().trim().isEmpty() ? -1 : Integer.parseInt(txtId.getText().trim());
+        if (cm.existeCedula(c.getCedula(), idActual)) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Ya hay otro cliente cargado con la cédula " + c.getCedula() + ".\n"
+                    + "Revise la lista antes de guardar.");
+            return;
+        }
         boolean ok;
         if (txtId.getText().trim().isEmpty()) {
             ok = cm.insertar(c);
         } else {
-            c.setIdCliente(Integer.parseInt(txtId.getText().trim()));
+            c.setIdCliente(idActual);
             ok = cm.modificar(c);
         }
         javax.swing.JOptionPane.showMessageDialog(this, ok ? "Guardado correctamente" : "Error al guardar");

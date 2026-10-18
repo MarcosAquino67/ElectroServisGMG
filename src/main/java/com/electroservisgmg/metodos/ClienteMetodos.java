@@ -61,4 +61,28 @@ public class ClienteMetodos {
         } catch (SQLException e) { System.out.println(e.getMessage()); }
         return lista;
     }
+
+    /**
+     * True si ya hay otro cliente con esa cedula.
+     * Se comparan solo los numeros y letras, asi "1.234.567" y "1234567"
+     * cuentan como la misma cedula. Sirve para no cargar el mismo cliente
+     * dos veces. Si la cedula esta vacia no se controla nada.
+     *
+     * @param idExcluir el cliente que se esta editando (asi no choca consigo mismo)
+     */
+    public boolean existeCedula(String cedula, int idExcluir) {
+        if (cedula == null || cedula.trim().isEmpty()) return false;
+        String limpia = cedula.replaceAll("[^0-9A-Za-z]", "").toUpperCase();
+        if (limpia.isEmpty()) return false;
+        String sql = "SELECT COUNT(*) FROM cliente "
+                + "WHERE UPPER(REGEXP_REPLACE(cedula, '[^0-9A-Za-z]', '')) = ? AND idCliente <> ?";
+        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, limpia);
+            ps.setInt(2, idExcluir);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) { System.out.println("existeCedula: " + e.getMessage()); }
+        return false;
+    }
 }

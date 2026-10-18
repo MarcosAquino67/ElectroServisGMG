@@ -24,6 +24,9 @@ public class FormProductos extends javax.swing.JPanel {
     private javax.swing.JTextField txtCodigoBarras;
     private javax.swing.JLabel lblBarras;
 
+    /** Cantidad a partir de la cual se avisa que hay que reponer (se crea en runtime). */
+    private javax.swing.JTextField txtStockMinimo;
+
     /**
      * Creates new form FormProductos
      */
@@ -31,9 +34,11 @@ public class FormProductos extends javax.swing.JPanel {
         initComponents();
         txtBuscar.setText("");
         crearCampoCodigoBarras();
+        crearCampoStockMinimo();
         crearBotonEtiquetas();
         UiTheme.styleTable(tblProductos);
         UiTheme.miles(txtStock);
+        UiTheme.miles(txtStockMinimo);
         UiTheme.miles(txtPrecioCompra, true);
         UiTheme.miles(txtPrecioVenta, true);
         cargarProveedores();
@@ -54,6 +59,28 @@ public class FormProductos extends javax.swing.JPanel {
         tblProductos.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) llenarDesdeFila();
         });
+    }
+
+    // ---- stock minimo ----
+
+    /**
+     * Campo "Stock mínimo" (se crea en runtime para no tocar el diseno del .form).
+     * Queda a la derecha de la vista previa del codigo de barras.
+     */
+    private void crearCampoStockMinimo() {
+        javax.swing.JLabel lbl = new javax.swing.JLabel("Stock mín.");
+        lbl.setFont(new java.awt.Font("Segoe UI", 0, 12));
+        lbl.setForeground(new java.awt.Color(156, 163, 175));
+        lbl.setToolTipText("Cantidad a la que se avisa que hay que reponer. 0 = no avisar");
+        panelForm.add(lbl, new org.netbeans.lib.awtextra.AbsoluteConstraints(900, 168, 120, 22));
+
+        txtStockMinimo = new javax.swing.JTextField();
+        txtStockMinimo.setBackground(new java.awt.Color(15, 23, 42));
+        txtStockMinimo.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        txtStockMinimo.setForeground(new java.awt.Color(243, 244, 246));
+        txtStockMinimo.setCaretColor(new java.awt.Color(243, 244, 246));
+        txtStockMinimo.setToolTipText("Cantidad a la que se avisa que hay que reponer. 0 = no avisar");
+        panelForm.add(txtStockMinimo, new org.netbeans.lib.awtextra.AbsoluteConstraints(900, 191, 80, 33));
     }
 
     // ---- codigo de barras ----
@@ -230,12 +257,13 @@ public class FormProductos extends javax.swing.JPanel {
                     || (p.getDescripcion() != null && p.getDescripcion().toLowerCase().contains(f))
                     || prov.toLowerCase().contains(f)) fil.add(p);
         }
-        String[] cols = {"ID", "Código", "Cód. barras", "Nombre", "Stock", "Precio Compra", "Precio Venta", "IVA", "Proveedor", "Descripción"};
-        Object[][] data = new Object[fil.size()][10];
+        String[] cols = {"ID", "Código", "Cód. barras", "Nombre", "Stock", "Mín.", "Precio Compra", "Precio Venta", "IVA", "Proveedor", "Descripción"};
+        Object[][] data = new Object[fil.size()][11];
         for (int i = 0; i < fil.size(); i++) {
             Producto p = fil.get(i);
             data[i] = new Object[]{p.getIdProducto(), p.getCodigo() == null ? "" : p.getCodigo(),
                 p.getCodigoBarras() == null ? "" : p.getCodigoBarras(), p.getNombre(), p.getStock(),
+                p.getStockMinimo() > 0 ? p.getStockMinimo() : "",
                 UiTheme.gs(p.getPrecioCompra()), UiTheme.gs(p.getPrecioVenta()), textoIva(p.getIva()),
                 p.getIdProveedor() > 0 ? nombreProveedor(p.getIdProveedor()) : "-",
                 p.getDescripcion() == null ? "" : p.getDescripcion()};
@@ -244,6 +272,23 @@ public class FormProductos extends javax.swing.JPanel {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         });
         UiTheme.styleTable(tblProductos);
+        // los productos que llegaron al minimo se ven en rojo
+        tblProductos.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
+            @Override public java.awt.Component getTableCellRendererComponent(javax.swing.JTable t, Object val,
+                    boolean sel, boolean foc, int row, int col) {
+                java.awt.Component c = super.getTableCellRendererComponent(t, val, sel, foc, row, col);
+                if (!sel) {
+                    boolean bajo = false;
+                    try {
+                        Object st = t.getValueAt(row, 4), mn = t.getValueAt(row, 5);
+                        bajo = mn instanceof Number && ((Number) mn).intValue() > 0
+                                && st instanceof Number && ((Number) st).intValue() <= ((Number) mn).intValue();
+                    } catch (RuntimeException ignored) {}
+                    c.setForeground(bajo ? UiTheme.DANGER : t.getForeground());
+                }
+                return c;
+            }
+        });
     }
 
     private void buscar() {
@@ -257,6 +302,7 @@ public class FormProductos extends javax.swing.JPanel {
         txtCodigoBarras.setText("");
         txtNombre.setText("");
         txtStock.setText("");
+        txtStockMinimo.setText("");
         txtPrecioCompra.setText("");
         txtPrecioVenta.setText("");
         txtDescripcion.setText("");
@@ -302,6 +348,7 @@ public class FormProductos extends javax.swing.JPanel {
                 txtCodigoBarras.setText(p.getCodigoBarras() == null ? "" : p.getCodigoBarras());
                 txtNombre.setText(p.getNombre());
                 txtStock.setText(String.valueOf(p.getStock()));
+                txtStockMinimo.setText(p.getStockMinimo() > 0 ? String.valueOf(p.getStockMinimo()) : "");
                 txtPrecioCompra.setText(String.valueOf(Math.round(p.getPrecioCompra())));
                 txtPrecioVenta.setText(String.valueOf(Math.round(p.getPrecioVenta())));
                 txtDescripcion.setText(p.getDescripcion() == null ? "" : p.getDescripcion());
@@ -331,14 +378,16 @@ public class FormProductos extends javax.swing.JPanel {
             return;
         }
         int stock;
+        int stockMinimo;
         double pc, pv;
         try {
             stock = UiTheme.parseGsInt(txtStock.getText().trim());
+            stockMinimo = UiTheme.parseGsInt(txtStockMinimo.getText().trim());
             pc = UiTheme.parseGs(txtPrecioCompra.getText().trim());
             pv = UiTheme.parseGs(txtPrecioVenta.getText().trim());
-            if (stock < 0 || pc < 0 || pv < 0) throw new NumberFormatException();
+            if (stock < 0 || stockMinimo < 0 || pc < 0 || pv < 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Stock y precios deben ser números válidos (≥ 0)");
+            javax.swing.JOptionPane.showMessageDialog(this, "Stock, stock mínimo y precios deben ser números válidos (≥ 0)");
             return;
         }
         String codigoBarras = txtCodigoBarras.getText().trim();
@@ -359,6 +408,7 @@ public class FormProductos extends javax.swing.JPanel {
         p.setNombre(nombre);
         p.setDescripcion(txtDescripcion.getText().trim());
         p.setStock(stock);
+        p.setStockMinimo(stockMinimo);
         p.setPrecioCompra(pc);
         p.setPrecioVenta(pv);
         p.setIva(ivaSeleccionado());

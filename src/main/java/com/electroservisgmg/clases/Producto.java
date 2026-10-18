@@ -8,6 +8,8 @@ public class Producto {
     private String nombre;
     private String descripcion;
     private int stock;
+    /** Cantidad a partir de la cual se avisa que hay que reponer (0 = sin aviso). */
+    private int stockMinimo;
     private double precioCompra;
     private double precioVenta;
     /** Tasa de IVA del producto en % (10, 5 o 0 = exenta). */
@@ -31,6 +33,10 @@ public class Producto {
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
     public int getStock() { return stock; }
     public void setStock(int stock) { this.stock = stock; }
+    public int getStockMinimo() { return stockMinimo; }
+    public void setStockMinimo(int stockMinimo) { this.stockMinimo = stockMinimo; }
+    /** True si el stock llego al minimo (o mas abajo) y hay que reponer. */
+    public boolean estaBajoMinimo() { return stockMinimo > 0 && stock <= stockMinimo; }
     public double getPrecioCompra() { return precioCompra; }
     public void setPrecioCompra(double precioCompra) { this.precioCompra = precioCompra; }
     public double getPrecioVenta() { return precioVenta; }

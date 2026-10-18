@@ -10,6 +10,8 @@ Es el **proyecto de laboratorio de 3º año de BTI**. La idea fue hacer un siste
 
 El sistema se usa en el local **ELECTROSERVIS G.M.G.** (Caaguazú, Paraguay), así que los datos del emisor (RUC, timbrado, dirección) y los formatos de factura y ticket están hechos a medida.
 
+> 📖 ¿Lo querés usar sin entrar al código? Mirá el **[Manual de usuario](MANUAL_DE_USUARIO.md)**: explica pantalla por pantalla cómo cargar clientes, vender, hacer una orden de servicio y sacar un respaldo.
+
 ### ¿Qué problema resuelve?
 
 Un taller de informática normalmente anota todo en cuaderno: qué equipo entró, qué arreglo se le hizo, cuánto se cobró, qué repuestos se usaron y cuánta plata hay en caja. Este sistema reemplaza ese cuaderno:
@@ -30,15 +32,15 @@ Un taller de informática normalmente anota todo en cuaderno: qué equipo entró
 | 🏠 **Dashboard** | Pantalla de inicio con 4 tarjetas: equipos ingresados, a retirar, terminados y stock total, más la lista de productos. |
 | 👥 **Clientes** | Alta, edición, baja y búsqueda de clientes (nombre, apellido, cédula, teléfono, dirección, email). |
 | 🚚 **Proveedores** | Igual que clientes, con RUC y datos de contacto. |
-| 📦 **Inventario (Productos)** | Productos con código interno, **código de barras**, nombre, stock, precio de compra/venta, **IVA (10 %, 5 % o exenta)**, proveedor, descripción y foto. |
+| 📦 **Inventario (Productos)** | Productos con código interno, **código de barras**, nombre, stock, **stock mínimo**, precio de compra/venta, **IVA (10 %, 5 % o exenta)**, proveedor, descripción y foto. |
 | 🔧 **Equipos** | Equipos de los clientes (tipo, marca, modelo, número de serie) para asociarlos a una orden de servicio. |
-| 🧾 **Órdenes de servicio** | Carga del equipo, falla reportada, estado (`PENDIENTE`, `EN_PROCESO`, `COMPLETADO`, `ENTREGADO`), presupuesto y comprobante imprimible. |
+| 🧾 **Órdenes de servicio** | Carga del equipo, falla reportada, estado (`PENDIENTE`, `EN_PROCESO`, `COMPLETADO`, `ENTREGADO`), presupuesto, **repuestos usados** (se descuentan del stock) y comprobante imprimible. |
 | 🛒 **Compras** | Compra a proveedores con detalle de productos. **Suma stock** y asienta el egreso en la caja. |
-| 💰 **Ventas** | Venta con detalle de productos, cliente, fecha, forma de pago y condición. **Descuenta stock**, asienta el ingreso en caja y permite imprimir **ticket** o **factura electrónica**. |
+| 💰 **Ventas** | Venta con detalle de productos, cliente, fecha, forma de pago y condición. **Descuenta stock**, asienta el ingreso en caja, permite imprimir **ticket** o **factura electrónica** y **anular** una venta. |
 | 📊 **Caja** | Apertura y cierre de caja con monto inicial/final y todos los movimientos (ingresos y egresos). |
 | 🖨️ **Reportes** | Reportes en PDF: inventario, clientes, ventas por rango de fechas, ticket de una venta, comprobante de orden y factura electrónica. Se abren solos al generarse. |
-| ⚙️ **Ajustes** | Datos del emisor: razón social, nombre comercial, RUC + DV, dirección, ciudad, teléfono, timbrado y su vigencia, establecimiento, punto de expedición, rango de facturación y **logo**. |
-| 👤 **Usuarios** | Alta, edición y baja de usuarios, con rol y estado. |
+| ⚙️ **Ajustes** | Datos del emisor (razón social, nombre comercial, RUC + DV, dirección, ciudad, teléfono, timbrado y su vigencia, establecimiento, punto de expedición, rango de facturación y **logo**) y **respaldo / restauración** de la base. |
+| 👤 **Usuarios** | Alta, edición y baja de usuarios, con rol y estado. **Solo lo ve un administrador.** |
 
 ### 🔎 Funciones que vale la pena mirar
 
@@ -48,6 +50,13 @@ Un taller de informática normalmente anota todo en cuaderno: qué equipo entró
 - **Ventana de vuelto**: al cobrar en **efectivo** se abre sola una calculadora que muestra el total, va descontando lo que paga el cliente y avisa en verde el **vuelto** o en rojo lo que **falta**. Tiene botones rápidos (Justo, +10.000, +20.000, +50.000, +100.000) y se cierra con *Enter* o *Esc*. También se puede abrir a mano con el botón **Vuelto**.
 - **Factura electrónica**: respeta el diseño real (colores, datos del emisor, logo, línea `CDC:`), calcula el **CDC** (Código de Control) y lo guarda en la base. El número de factura es correlativo y no se repite aunque se reimprima.
 - **Verificación de stock**: no se puede vender más cantidad de la que hay; si no alcanza, avisa y no registra la venta.
+- **Anular una venta**: con el botón *Anular* la venta **no se borra**: queda marcada como `ANULADA` (en la lista se ve en rojo), **devuelve el stock** de los productos y deja un **egreso en la caja**. Así el número de factura nunca se repite y queda el registro de que existió.
+- **Aviso de reposición (stock mínimo)**: a cada producto se le puede cargar la cantidad a la que hay que reponer. Los que llegan a ese mínimo se ven **en rojo** en el inventario y en el panel principal, que además muestra cuántos productos hay que reponer.
+- **Repuestos en las órdenes de servicio**: en *Órdenes de servicio* el botón **Repuestos usados** deja cargar qué productos del stock se usaron en la reparación. Al agregarlos se **descuenta el stock** y el precio se **suma al costo** de la orden (y al quitarlos, se devuelve al stock y se resta del costo).
+- **Respaldo y restauración**: desde *Ajustes* se guarda toda la base en un archivo **`.sql`** (sin necesitar `mysqldump`) y se puede volver a cargar un respaldo anterior. La restauración va en una transacción: si algo falla, no se cambia nada.
+- **Contraseñas con hash**: las claves no se guardan en texto plano sino como **SHA-256**. Las claves viejas se siguen aceptando y se convierten solas a hash la primera vez que ese usuario inicia sesión.
+- **Permisos por rol**: hay dos roles, `ADMINISTRADOR` y `USUARIO`. Las pantallas de **Usuarios** y **Ajustes** quedan deshabilitadas para los usuarios comunes (y un administrador no puede sacarse el rol ni borrarse a sí mismo).
+- **Controles de duplicados**: no deja cargar dos clientes con la misma cédula ni dos proveedores con el mismo RUC (comparando sin puntos ni guiones).
 
 ---
 
@@ -97,9 +106,14 @@ Estos scripts ya están aplicados en la base de la escuela, pero si arrancás de
 mysql -u root -p electroservis_app < sql/datos_empresa_real.sql
 mysql -u root -p electroservis_app < sql/actualizar_factura_electronica.sql
 mysql -u root -p electroservis_app < sql/actualizar_codigo_barras.sql
+mysql -u root -p electroservis_app < sql/actualizar_anular_venta.sql
+mysql -u root -p electroservis_app < sql/actualizar_stock_minimo.sql
+mysql -u root -p electroservis_app < sql/actualizar_repuestos_orden.sql
 ```
 
-> ⚠️ Son scripts de actualización: si los corrés dos veces, MySQL avisa que la columna ya existe. No rompe nada, se ignora el aviso.
+> ⚠️ Son scripts de actualización: si los corrés dos veces, MySQL avisa que la columna (o la tabla) ya existe. No rompe nada, se ignora el aviso.
+>
+> 💡 En **PowerShell** no funciona el `<`, hay que usar: `Get-Content "sql\actualizar_stock_minimo.sql" -Raw | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root electroservis_app`
 
 ### 3) Configurar la conexión
 
@@ -134,6 +148,13 @@ mvn compile exec:java -Dexec.mainClass=com.electroservisgmg.ElectroServisGMG
 |---|---|---|
 | `Marcos` | `2307` | ADMINISTRADOR |
 
+### Roles
+
+- **`ADMINISTRADOR`**: ve todo (incluidos *Usuarios* y *Ajustes*).
+- **`USUARIO`**: usa el sistema completo menos *Usuarios* y *Ajustes* (esos botones quedan apagados en el menú).
+
+Los usuarios nuevos se crean como `USUARIO` por defecto, y los usuarios que ya existían sin rol cargado se toman como administradores (así la actualización de la base no deja a nadie afuera).
+
 ---
 
 ## 🗂️ Estructura del proyecto
@@ -142,13 +163,18 @@ mvn compile exec:java -Dexec.mainClass=com.electroservisgmg.ElectroServisGMG
 ElectroServisGMG/
 ├── pom.xml                      → dependencias y configuración de Maven
 ├── README.md                    → este archivo
+├── MANUAL_DE_USUARIO.md         → manual paso a paso para usar el sistema
 ├── sql/                         → scripts de base de datos
 │   ├── crear_bd_app.sql             (crea la base y las tablas)
 │   ├── insertar_usuario.sql         (usuario administrador inicial)
 │   ├── datos_empresa_real.sql       (datos del emisor para factura/ticket)
 │   ├── actualizar_factura_electronica.sql
-│   └── actualizar_codigo_barras.sql
+│   ├── actualizar_codigo_barras.sql
+│   ├── actualizar_anular_venta.sql      (columna estado de la venta)
+│   ├── actualizar_stock_minimo.sql      (aviso de reposición)
+│   └── actualizar_repuestos_orden.sql   (repuestos usados en una orden)
 ├── imagenes_productos/          → fotos de los productos de ejemplo
+├── respaldos/                   → carpetas de respaldos .sql (no va a git)
 └── src/main/
     ├── java/com/electroservisgmg/
     │   ├── ElectroServisGMG.java    → main (arranca el login)
@@ -179,18 +205,19 @@ Y aparte:
 
 ## 🗄️ Base de datos
 
-Base: **`electroservis_app`** (14 tablas)
+Base: **`electroservis_app`** (15 tablas)
 
 | Tabla | Guarda |
 |---|---|
-| `usuario` | usuarios del sistema (con rol y estado) |
+| `usuario` | usuarios del sistema (con rol y estado; la clave va con hash SHA-256) |
 | `cliente` | clientes |
 | `proveedor` | proveedores |
-| `producto` | productos (stock, precios, IVA, código de barras, foto) |
+| `producto` | productos (stock, stock mínimo, precios, IVA, código de barras, foto) |
 | `tipo_equipo` | tipos de equipo (celular, notebook, TV, ...) |
 | `equipo` | equipos de los clientes |
 | `ordenservicio` | órdenes del taller |
-| `venta` / `detalleventa` | cabecera y renglones de cada venta |
+| `orden_repuesto` | repuestos (productos del stock) usados en cada orden |
+| `venta` / `detalleventa` | cabecera y renglones de cada venta (`venta.estado`: `REGISTRADA` o `ANULADA`) |
 | `compra` / `detallecompra` | cabecera y renglones de cada compra |
 | `caja` / `caja_movimiento` | apertura/cierre de caja y sus movimientos |
 | `empresa` | datos del emisor para la factura y el ticket |
@@ -245,12 +272,13 @@ Y el diseño se cambia en la pestaña **Design** del `.form`, no escribiendo coo
 
 Cosas que quedaron para más adelante (sirven para seguir practicando):
 
-1. **Las contraseñas se guardan en texto plano.** Lo correcto sería guardarlas con un hash (por ejemplo SHA-256 o bcrypt).
-2. **Los permisos por rol no se aplican**: cualquier usuario que entra puede hacer todo. La base ya guarda el rol, falta usarlo para ocultar/deshabilitar botones.
-3. **El usuario y la contraseña de MySQL están escritos en el código** (`Conexion.java`). Lo ideal sería un archivo de configuración aparte.
-4. **La factura electrónica no está conectada a SIFEN/ekuatía**: imprime el formato con un CDC generado internamente, pero no se envía ni se firma digitalmente.
-5. **La tabla `cliente` no tiene columna `RUC`**: la factura usa la cédula del cliente. **La consulta de RUC por internet** (para autocompletar el nombre desde el RUC) quedó sin implementar.
-6. Los formularios usan posiciones fijas (AbsoluteLayout), así que la ventana no se adapta sola si se achica mucho (las pantallas están pensadas para 1100 × 700 aprox.).
+1. **El usuario y la contraseña de MySQL están escritos en el código** (`Conexion.java`). Lo ideal sería un archivo de configuración aparte (o variables de entorno).
+2. **El respaldo guarda los datos, no la estructura**: alcanza para volver atrás en un sistema ya instalado (restaura sobre las mismas tablas). Para armar la base desde cero se usa `crear_bd_app.sql`.
+3. **La factura electrónica no está conectada a SIFEN/ekuatía**: imprime el formato con un CDC generado internamente, pero no se envía ni se firma digitalmente.
+4. **La tabla `cliente` no tiene columna `RUC`**: la factura usa la cédula del cliente. **La consulta de RUC por internet** (para autocompletar el nombre desde el RUC) quedó sin implementar.
+5. **El lector de código de barras está en Ventas y Compras**: en las otras pantallas el código se carga a mano.
+6. **El vuelto no se guarda en la base**: la ventana de vuelto es una calculadora (la venta guarda el total y la forma de pago).
+7. Los formularios usan posiciones fijas (AbsoluteLayout), así que la ventana no se adapta sola si se achica mucho (las pantallas están pensadas para 1100 × 700 aprox.).
 
 ---
 

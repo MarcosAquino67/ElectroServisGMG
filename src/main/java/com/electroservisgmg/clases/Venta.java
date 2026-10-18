@@ -18,8 +18,18 @@ public class Venta {
     private int nroFactura;
     /** Codigo de Control (44 digitos) de la Factura Electronica; null si solo se emitio ticket. */
     private String cdc;
+    /** Estado de la venta: REGISTRADA o ANULADA. Una venta anulada no se borra (para no repetir el nro de factura). */
+    private String estado = REGISTRADA;
 
     public Venta() {}
+
+    public static final String REGISTRADA = "REGISTRADA";
+    public static final String ANULADA = "ANULADA";
+
+    public String getEstado() { return estado == null || estado.isEmpty() ? REGISTRADA : estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+    /** True si la venta fue anulada (se le devolvio el stock al producto). */
+    public boolean estaAnulada() { return ANULADA.equalsIgnoreCase(getEstado()); }
 
     public String getCondicionVenta() { return condicionVenta; }
     public void setCondicionVenta(String condicionVenta) { this.condicionVenta = condicionVenta; }

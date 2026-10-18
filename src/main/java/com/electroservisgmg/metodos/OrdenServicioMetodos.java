@@ -56,11 +56,41 @@ public class OrdenServicioMetodos {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { System.out.println(e.getMessage()); return false; }
     }
+    /**
+     * Borra la orden. Si tenia repuestos cargados, primero los devuelve al
+     * stock y borra esas lineas (si no, la clave foranea no deja borrar).
+     * Todo en una transaccion.
+     */
     public boolean eliminar(int id) {
-        String sql = "DELETE FROM ordenservicio WHERE idOrden=?";
-        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, id); return ps.executeUpdate() > 0;
-        } catch (SQLException e) { System.out.println(e.getMessage()); return false; }
+        Connection con = null;
+        try {
+            con = Conexion.nuevaConexion();
+            con.setAutoCommit(false);
+            try (PreparedStatement ps = con.prepareStatement(
+                    "UPDATE producto p JOIN orden_repuesto r ON r.idProducto = p.idProducto "
+                    + "SET p.stock = p.stock + r.cantidad WHERE r.idOrdenServicio=?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            } catch (SQLException sinTabla) {
+                // si todavia no se corrio el script de repuestos, la tabla no existe
+            }
+            try (PreparedStatement ps = con.prepareStatement("DELETE FROM orden_repuesto WHERE idOrdenServicio=?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            } catch (SQLException sinTabla) {}
+            try (PreparedStatement ps = con.prepareStatement("DELETE FROM ordenservicio WHERE idOrden=?")) {
+                ps.setInt(1, id);
+                if (ps.executeUpdate() == 0) { con.rollback(); return false; }
+            }
+            con.commit();
+            return true;
+        } catch (SQLException e) {
+            try { if (con != null) con.rollback(); } catch (SQLException ignored) {}
+            System.out.println(e.getMessage());
+            return false;
+        } finally {
+            try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (SQLException ignored) {}
+        }
     }
     public List<OrdenServicio> listar() {
         List<OrdenServicio> lista = new ArrayList<>();

@@ -49,6 +49,7 @@ public class FormVentas extends javax.swing.JPanel {
         crearDateChooser();
         crearCampoCodigoBarras();
         crearBotonVuelto();
+        crearBotonAnular();
         UiTheme.styleTable(tblVentas);
         UiTheme.styleTable(tblDetalle);
         UiTheme.miles(txtCantidad);
@@ -221,6 +222,76 @@ public class FormVentas extends javax.swing.JPanel {
         FormVuelto.mostrar(this, idVentaActual == -1 ? "Venta en curso" : "Venta #" + idVentaActual, t, "");
     }
 
+    // ---- anular ----
+
+    /** Boton para anular la venta elegida en la tabla. */
+    private void crearBotonAnular() {
+        javax.swing.JButton btn = new javax.swing.JButton("Anular");
+        btn.setBackground(new java.awt.Color(153, 27, 27));
+        btn.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        btn.setForeground(new java.awt.Color(255, 255, 255));
+        btn.setBorderPainted(false);
+        btn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btn.setFocusPainted(false);
+        btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        btn.setToolTipText("Anula la venta elegida en la lista y devuelve los productos al stock");
+        btn.addActionListener(e -> anular());
+        panelForm.add(btn, new org.netbeans.lib.awtextra.AbsoluteConstraints(998, 215, 82, 40));
+    }
+
+    /**
+     * Anula la venta elegida en la lista: le devuelve el stock a los productos,
+     * deja la venta marcada como ANULADA (no se borra, para no repetir el
+     * numero de factura) y registra la salida del dinero en la caja.
+     */
+    private void anular() {
+        int fila = tblVentas.getSelectedRow();
+        if (fila < 0) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Seleccione en la lista la venta que quiere anular");
+            return;
+        }
+        int id = ((Number) tblVentas.getValueAt(fila, 0)).intValue();
+        Venta v = new VentaMetodos().buscar(id);
+        if (v == null) {
+            javax.swing.JOptionPane.showMessageDialog(this, "No se encontró la venta #" + id);
+            return;
+        }
+        if (v.estaAnulada()) {
+            javax.swing.JOptionPane.showMessageDialog(this, "La venta #" + id + " ya está anulada");
+            return;
+        }
+        String doc = v.esFactura()
+                ? "\nTambién queda anulada su factura electrónica N° " + v.getNroFactura() + "."
+                : "";
+        int conf = javax.swing.JOptionPane.showConfirmDialog(this,
+                "¿Anular la venta #" + id + " de " + nombreCliente(v.getIdCliente())
+                + " por " + UiTheme.gs(v.getTotal()) + "?\n"
+                + "Los productos vuelven al stock." + doc,
+                "Confirmar anulación",
+                javax.swing.JOptionPane.YES_NO_OPTION, javax.swing.JOptionPane.WARNING_MESSAGE);
+        if (conf != javax.swing.JOptionPane.YES_OPTION) return;
+
+        if (!new VentaMetodos().anular(id)) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "No se pudo anular la venta #" + id + " (¿ya estaba anulada?)");
+            return;
+        }
+        // la plata que habia entrado vuelve a salir de la caja, si sigue abierta
+        CajaMetodos cm = new CajaMetodos();
+        Caja caja = cm.cajaAbierta();
+        if (caja != null) {
+            cm.registrarMovimiento(caja.getIdCaja(), "EGRESO", v.getTotal(), "Anulación venta #" + id);
+        }
+        idVentaActual = -1;
+        recargarProductos();
+        cargarTabla(txtBuscar.getText().trim());
+        limpiar();
+        javax.swing.JOptionPane.showMessageDialog(this,
+                "Venta #" + id + " anulada.\nLos productos volvieron al stock."
+                + (caja == null ? "" : "\nSalida de " + UiTheme.gs(v.getTotal()) + " asentada en la caja #" + caja.getIdCaja() + "."));
+    }
+
     // ---- combos ----
     private void cargarClientes() {
         listaClientes = new ClienteMetodos().listar();
@@ -328,26 +399,41 @@ public class FormVentas extends javax.swing.JPanel {
             if (f.isEmpty() || String.valueOf(v.getIdVenta()).contains(f)
                     || cli.toLowerCase().contains(f) || fecha.contains(f)
                     || pago.toLowerCase().contains(f) || doc.toLowerCase().contains(f)
-                    || UiTheme.gs(v.getTotal()).toLowerCase().contains(f)) fil.add(v);
+                    || UiTheme.gs(v.getTotal()).toLowerCase().contains(f)
+                    || v.getEstado().toLowerCase().contains(f)) fil.add(v);
         }
-        String[] cols = {"ID", "Cliente", "Fecha", "Total", "Pago", "Documento"};
-        Object[][] data = new Object[fil.size()][6];
+        String[] cols = {"ID", "Cliente", "Fecha", "Total", "Pago", "Documento", "Estado"};
+        Object[][] data = new Object[fil.size()][7];
         for (int i = 0; i < fil.size(); i++) {
             Venta v = fil.get(i);
             data[i] = new Object[]{v.getIdVenta(), nombreCliente(v.getIdCliente()),
                 v.getFechaVenta() == null ? "" : sdf.format(v.getFechaVenta()),
-                UiTheme.gs(v.getTotal()), v.getFormaPago(), documentoDe(v, emp)};
+                UiTheme.gs(v.getTotal()), v.getFormaPago(), documentoDe(v, emp), v.getEstado()};
         }
         tblVentas.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
             @Override public boolean isCellEditable(int r, int cc) { return false; }
         });
         tblVentas.getColumnModel().getColumn(0).setPreferredWidth(50);
-        tblVentas.getColumnModel().getColumn(1).setPreferredWidth(240);
+        tblVentas.getColumnModel().getColumn(1).setPreferredWidth(230);
         tblVentas.getColumnModel().getColumn(2).setPreferredWidth(100);
         tblVentas.getColumnModel().getColumn(3).setPreferredWidth(120);
         tblVentas.getColumnModel().getColumn(4).setPreferredWidth(110);
-        tblVentas.getColumnModel().getColumn(5).setPreferredWidth(170);
+        tblVentas.getColumnModel().getColumn(5).setPreferredWidth(160);
+        tblVentas.getColumnModel().getColumn(6).setPreferredWidth(90);
         UiTheme.styleTable(tblVentas);
+        // las ventas anuladas se ven en rojo
+        tblVentas.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
+            @Override public java.awt.Component getTableCellRendererComponent(javax.swing.JTable t, Object val,
+                    boolean sel, boolean foc, int row, int col) {
+                java.awt.Component c = super.getTableCellRendererComponent(t, val, sel, foc, row, col);
+                if (!sel) {
+                    boolean anulada = Venta.ANULADA.equalsIgnoreCase(String.valueOf(t.getValueAt(row, 6)));
+                    c.setForeground(anulada ? UiTheme.DANGER : t.getForeground());
+                    c.setFont(anulada ? t.getFont().deriveFont(java.awt.Font.ITALIC) : t.getFont());
+                }
+                return c;
+            }
+        });
     }
 
     /** Texto de la columna Documento: ticket o factura electronica con su numero. */
@@ -562,6 +648,12 @@ public class FormVentas extends javax.swing.JPanel {
             return;
         }
         int id = ((Number) tblVentas.getValueAt(fila, 0)).intValue();
+        Venta anulada = new VentaMetodos().buscar(id);
+        if (anulada != null && anulada.estaAnulada()) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "La venta #" + id + " está anulada: no se puede imprimir su ticket.");
+            return;
+        }
         try {
             java.io.File pdf = ReportesMetodos.ticketVenta(id);
             javax.swing.JOptionPane.showMessageDialog(this, "Ticket generado:\n" + pdf.getAbsolutePath());
@@ -584,6 +676,12 @@ public class FormVentas extends javax.swing.JPanel {
             return;
         }
         int id = ((Number) tblVentas.getValueAt(fila, 0)).intValue();
+        Venta previa = new VentaMetodos().buscar(id);
+        if (previa != null && previa.estaAnulada()) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "La venta #" + id + " está anulada: no se puede emitir su factura.");
+            return;
+        }
         try {
             java.io.File pdf = ReportesMetodos.facturaElectronica(id);
             Venta v = new VentaMetodos().buscar(id);

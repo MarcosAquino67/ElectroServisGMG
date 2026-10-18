@@ -53,4 +53,27 @@ public class ProveedorMetodos {
         } catch (SQLException e) { System.out.println(e.getMessage()); }
         return lista;
     }
+
+    /**
+     * True si ya hay otro proveedor con ese RUC (se comparan solo los numeros,
+     * asi "80012345-6" y "800123456" cuentan como el mismo). Si viene vacio no
+     * se controla nada.
+     *
+     * @param idExcluir el proveedor que se esta editando
+     */
+    public boolean existeRuc(String ruc, int idExcluir) {
+        if (ruc == null || ruc.trim().isEmpty()) return false;
+        String limpio = ruc.replaceAll("[^0-9A-Za-z]", "").toUpperCase();
+        if (limpio.isEmpty()) return false;
+        String sql = "SELECT COUNT(*) FROM proveedor "
+                + "WHERE UPPER(REGEXP_REPLACE(ruc, '[^0-9A-Za-z]', '')) = ? AND idProveedor <> ?";
+        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, limpio);
+            ps.setInt(2, idExcluir);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) { System.out.println("existeRuc: " + e.getMessage()); }
+        return false;
+    }
 }

@@ -12,8 +12,8 @@ public class ProductoMetodos {
 
     public boolean insertar(Producto p) {
         ultimoError = "";
-        String sql = "INSERT INTO producto(codigo, codigoBarras, nombre, descripcion, stock, precioCompra, precioVenta, iva, idProveedor, foto)"
-                + " VALUES(?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO producto(codigo, codigoBarras, nombre, descripcion, stock, precioCompra, precioVenta, iva, idProveedor, foto, stockMinimo)"
+                + " VALUES(?,?,?,?,?,?,?,?,?,?,?)";
         try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, p.getCodigo());
             textoONull(ps, 2, p.getCodigoBarras());
@@ -26,13 +26,14 @@ public class ProductoMetodos {
             if (p.getIdProveedor() > 0) ps.setInt(9, p.getIdProveedor());
             else ps.setNull(9, Types.INTEGER);
             textoONull(ps, 10, p.getFoto());
+            ps.setInt(11, p.getStockMinimo());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { ultimoError = e.getMessage(); System.out.println("insertar producto: " + e.getMessage()); return false; }
     }
 
     public boolean modificar(Producto p) {
         ultimoError = "";
-        String sql = "UPDATE producto SET codigo=?, codigoBarras=?, nombre=?, descripcion=?, stock=?, precioCompra=?, precioVenta=?, iva=?, idProveedor=?, foto=? WHERE idProducto=?";
+        String sql = "UPDATE producto SET codigo=?, codigoBarras=?, nombre=?, descripcion=?, stock=?, precioCompra=?, precioVenta=?, iva=?, idProveedor=?, foto=?, stockMinimo=? WHERE idProducto=?";
         try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, p.getCodigo());
             textoONull(ps, 2, p.getCodigoBarras());
@@ -45,7 +46,8 @@ public class ProductoMetodos {
             if (p.getIdProveedor() > 0) ps.setInt(9, p.getIdProveedor());
             else ps.setNull(9, Types.INTEGER);
             textoONull(ps, 10, p.getFoto());
-            ps.setInt(11, p.getIdProducto());
+            ps.setInt(11, p.getStockMinimo());
+            ps.setInt(12, p.getIdProducto());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { ultimoError = e.getMessage(); System.out.println("modificar producto: " + e.getMessage()); return false; }
     }
@@ -74,6 +76,20 @@ public class ProductoMetodos {
         try (Connection con = Conexion.getConexion(); Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) lista.add(armar(rs));
         } catch (SQLException e) { System.out.println(e.getMessage()); }
+        return lista;
+    }
+
+    /**
+     * Productos cuyo stock ya llego al minimo cargado (o mas abajo).
+     * Los que tienen el minimo en 0 no entran: quiere decir "no avisar".
+     */
+    public List<Producto> listarBajoMinimo() {
+        List<Producto> lista = new ArrayList<>();
+        String sql = "SELECT * FROM producto WHERE stockMinimo > 0 AND stock <= stockMinimo "
+                + "ORDER BY stock - stockMinimo ASC";
+        try (Connection con = Conexion.getConexion(); Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) lista.add(armar(rs));
+        } catch (SQLException e) { System.out.println("listarBajoMinimo: " + e.getMessage()); }
         return lista;
     }
 
@@ -129,6 +145,7 @@ public class ProductoMetodos {
         p.setNombre(rs.getString("nombre"));
         p.setDescripcion(rs.getString("descripcion"));
         p.setStock(rs.getInt("stock"));
+        try { p.setStockMinimo(rs.getInt("stockMinimo")); } catch (SQLException ignored) {}
         p.setPrecioCompra(rs.getDouble("precioCompra"));
         p.setPrecioVenta(rs.getDouble("precioVenta"));
         try { p.setIva(rs.getDouble("iva")); } catch (SQLException ignored) {}

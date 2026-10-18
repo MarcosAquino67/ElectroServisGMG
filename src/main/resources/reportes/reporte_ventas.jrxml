@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" name="reporte_ventas" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
     <parameter name="desde" class="java.lang.String" isForPrompting="false"/>
     <parameter name="hasta" class="java.lang.String" isForPrompting="false"/>
-    <queryString><![CDATA[SELECT v.idVenta, CONCAT(c.nombre,' ',c.apellido) AS cliente, v.fechaVenta, v.total, v.formaPago FROM venta v LEFT JOIN cliente c ON c.idCliente = v.idCliente WHERE ($P{desde} IS NULL OR v.fechaVenta >= CONCAT($P{desde},' 00:00:00')) AND ($P{hasta} IS NULL OR v.fechaVenta <= CONCAT($P{hasta},' 23:59:59')) ORDER BY v.fechaVenta DESC]]></queryString>
+    <queryString><![CDATA[SELECT v.idVenta, CONCAT(c.nombre,' ',c.apellido) AS cliente, v.fechaVenta, v.total, v.formaPago FROM venta v LEFT JOIN cliente c ON c.idCliente = v.idCliente WHERE (v.estado IS NULL OR v.estado <> 'ANULADA') AND ($P{desde} IS NULL OR v.fechaVenta >= CONCAT($P{desde},' 00:00:00')) AND ($P{hasta} IS NULL OR v.fechaVenta <= CONCAT($P{hasta},' 23:59:59')) ORDER BY v.fechaVenta DESC]]></queryString>
     <field name="idVenta" class="java.lang.Integer"/>
     <field name="cliente" class="java.lang.String"/>
     <field name="fechaVenta" class="java.sql.Date"/>

@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS producto (
     nombre VARCHAR(100) NOT NULL,
     descripcion VARCHAR(255),
     stock INT NOT NULL DEFAULT 0,
+    stockMinimo INT NOT NULL DEFAULT 0,
     precioCompra DOUBLE NOT NULL DEFAULT 0,
     precioVenta DOUBLE NOT NULL DEFAULT 0,
     iva DOUBLE NOT NULL DEFAULT 10,
@@ -78,6 +79,19 @@ CREATE TABLE IF NOT EXISTS ordenservicio (
     CONSTRAINT fk_orden_usu FOREIGN KEY (idUsuario) REFERENCES usuario(idUsuario)
 );
 
+-- Repuestos (productos) que se usaron en cada orden de servicio.
+-- Al agregar uno se descuenta del stock y su precio se suma al costo de la orden.
+CREATE TABLE IF NOT EXISTS orden_repuesto (
+    idRepuesto INT AUTO_INCREMENT PRIMARY KEY,
+    idOrdenServicio INT NOT NULL,
+    idProducto INT NOT NULL,
+    cantidad INT NOT NULL,
+    precioUnitario DOUBLE NOT NULL DEFAULT 0,
+    fecha DATETIME NOT NULL,
+    CONSTRAINT fk_rep_orden FOREIGN KEY (idOrdenServicio) REFERENCES ordenservicio(idOrden),
+    CONSTRAINT fk_rep_prod FOREIGN KEY (idProducto) REFERENCES producto(idProducto)
+);
+
 CREATE TABLE IF NOT EXISTS venta (
     idVenta INT AUTO_INCREMENT PRIMARY KEY,
     idCliente INT NOT NULL,
@@ -90,6 +104,7 @@ CREATE TABLE IF NOT EXISTS venta (
     tipoDocumento VARCHAR(20) NOT NULL DEFAULT 'TICKET',
     nroFactura INT NULL,
     cdc VARCHAR(44) NULL,
+    estado VARCHAR(15) NOT NULL DEFAULT 'REGISTRADA',
     CONSTRAINT fk_venta_cli FOREIGN KEY (idCliente) REFERENCES cliente(idCliente),
     CONSTRAINT fk_venta_usu FOREIGN KEY (idUsuario) REFERENCES usuario(idUsuario)
 );
