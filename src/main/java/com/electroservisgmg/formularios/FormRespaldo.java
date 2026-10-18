@@ -46,11 +46,8 @@ public class FormRespaldo extends javax.swing.JDialog {
         btnRestaurar.setToolTipText("Reemplaza los datos actuales por los de un respaldo anterior");
 
         // ---- eventos ----
-        btnRespaldar.addActionListener(e -> respaldar());
-        btnRestaurar.addActionListener(e -> restaurar());
-        btnCarpeta.addActionListener(e -> abrirCarpeta());
-        btnCerrar.addActionListener(e -> dispose());
-
+        // Los botones se conectan desde el disenador (pestana Events ->
+        // actionPerformed); aca queda solo lo que el diseno no modela.
         getRootPane().registerKeyboardAction(e -> dispose(),
                 KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
@@ -243,6 +240,7 @@ public class FormRespaldo extends javax.swing.JDialog {
         btnRespaldar.setBorderPainted(false);
         btnRespaldar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnRespaldar.setFocusPainted(false);
+        btnRespaldar.addActionListener(this::btnRespaldarActionPerformed);
         panelContenido.add(btnRespaldar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 186, 270, 46));
 
         btnRestaurar.setBackground(new java.awt.Color(153, 27, 27));
@@ -252,6 +250,7 @@ public class FormRespaldo extends javax.swing.JDialog {
         btnRestaurar.setBorderPainted(false);
         btnRestaurar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnRestaurar.setFocusPainted(false);
+        btnRestaurar.addActionListener(this::btnRestaurarActionPerformed);
         panelContenido.add(btnRestaurar, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 186, 270, 46));
 
         btnCarpeta.setBackground(new java.awt.Color(51, 65, 85));
@@ -261,6 +260,7 @@ public class FormRespaldo extends javax.swing.JDialog {
         btnCarpeta.setBorderPainted(false);
         btnCarpeta.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnCarpeta.setFocusPainted(false);
+        btnCarpeta.addActionListener(this::btnCarpetaActionPerformed);
         panelContenido.add(btnCarpeta, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 244, 270, 38));
 
         btnCerrar.setBackground(new java.awt.Color(51, 65, 85));
@@ -270,6 +270,7 @@ public class FormRespaldo extends javax.swing.JDialog {
         btnCerrar.setBorderPainted(false);
         btnCerrar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnCerrar.setFocusPainted(false);
+        btnCerrar.addActionListener(this::btnCerrarActionPerformed);
         panelContenido.add(btnCerrar, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 244, 270, 38));
 
         lblEstado.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
@@ -290,6 +291,22 @@ public class FormRespaldo extends javax.swing.JDialog {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnRespaldarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRespaldarActionPerformed
+        respaldar();
+    }//GEN-LAST:event_btnRespaldarActionPerformed
+
+    private void btnRestaurarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRestaurarActionPerformed
+        restaurar();
+    }//GEN-LAST:event_btnRestaurarActionPerformed
+
+    private void btnCarpetaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCarpetaActionPerformed
+        abrirCarpeta();
+    }//GEN-LAST:event_btnCarpetaActionPerformed
+
+    private void btnCerrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCerrarActionPerformed
+        dispose();
+    }//GEN-LAST:event_btnCerrarActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCarpeta;

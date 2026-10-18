@@ -47,17 +47,8 @@ public class FormVuelto extends javax.swing.JDialog {
         UiTheme.miles(txtPago, true);
 
         // ---- eventos ----
-        btnJusto.addActionListener(e -> setPago(Math.round(total)));
-        btn10.addActionListener(e -> sumar(10000));
-        btn20.addActionListener(e -> sumar(20000));
-        btn50.addActionListener(e -> sumar(50000));
-        btn100.addActionListener(e -> sumar(100000));
-        btnLimpiar.addActionListener(e -> {
-            txtPago.setText("");
-            txtPago.requestFocusInWindow();
-        });
-        btnListo.addActionListener(e -> dispose());
-        txtPago.addActionListener(e -> dispose());
+        // Los botones y txtPago se conectan desde el disenador (pestana Events
+        // -> actionPerformed); aca queda solo lo que el diseno no modela.
         txtPago.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { calcular(); }
             @Override public void removeUpdate(DocumentEvent e) { calcular(); }
@@ -214,6 +205,7 @@ public class FormVuelto extends javax.swing.JDialog {
         txtPago.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
         txtPago.setForeground(new java.awt.Color(243, 244, 246));
         txtPago.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        txtPago.addActionListener(this::txtPagoActionPerformed);
         panelContenido.add(txtPago, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 128, 430, 48));
 
         btnJusto.setBackground(new java.awt.Color(51, 65, 85));
@@ -223,6 +215,7 @@ public class FormVuelto extends javax.swing.JDialog {
         btnJusto.setBorderPainted(false);
         btnJusto.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnJusto.setFocusPainted(false);
+        btnJusto.addActionListener(this::btnJustoActionPerformed);
         panelContenido.add(btnJusto, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 186, 136, 34));
 
         btn10.setBackground(new java.awt.Color(51, 65, 85));
@@ -232,6 +225,7 @@ public class FormVuelto extends javax.swing.JDialog {
         btn10.setBorderPainted(false);
         btn10.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btn10.setFocusPainted(false);
+        btn10.addActionListener(this::btn10ActionPerformed);
         panelContenido.add(btn10, new org.netbeans.lib.awtextra.AbsoluteConstraints(167, 186, 136, 34));
 
         btn20.setBackground(new java.awt.Color(51, 65, 85));
@@ -241,6 +235,7 @@ public class FormVuelto extends javax.swing.JDialog {
         btn20.setBorderPainted(false);
         btn20.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btn20.setFocusPainted(false);
+        btn20.addActionListener(this::btn20ActionPerformed);
         panelContenido.add(btn20, new org.netbeans.lib.awtextra.AbsoluteConstraints(314, 186, 136, 34));
 
         btn50.setBackground(new java.awt.Color(51, 65, 85));
@@ -250,6 +245,7 @@ public class FormVuelto extends javax.swing.JDialog {
         btn50.setBorderPainted(false);
         btn50.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btn50.setFocusPainted(false);
+        btn50.addActionListener(this::btn50ActionPerformed);
         panelContenido.add(btn50, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 224, 136, 34));
 
         btn100.setBackground(new java.awt.Color(51, 65, 85));
@@ -259,6 +255,7 @@ public class FormVuelto extends javax.swing.JDialog {
         btn100.setBorderPainted(false);
         btn100.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btn100.setFocusPainted(false);
+        btn100.addActionListener(this::btn100ActionPerformed);
         panelContenido.add(btn100, new org.netbeans.lib.awtextra.AbsoluteConstraints(167, 224, 136, 34));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
@@ -268,6 +265,7 @@ public class FormVuelto extends javax.swing.JDialog {
         btnLimpiar.setBorderPainted(false);
         btnLimpiar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnLimpiar.setFocusPainted(false);
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelContenido.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(314, 224, 136, 34));
 
         lblCaption.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
@@ -294,6 +292,7 @@ public class FormVuelto extends javax.swing.JDialog {
         btnListo.setBorderPainted(false);
         btnListo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnListo.setFocusPainted(false);
+        btnListo.addActionListener(this::btnListoActionPerformed);
         panelContenido.add(btnListo, new org.netbeans.lib.awtextra.AbsoluteConstraints(300, 336, 150, 30));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -309,6 +308,40 @@ public class FormVuelto extends javax.swing.JDialog {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnJustoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnJustoActionPerformed
+        setPago(Math.round(total));
+    }//GEN-LAST:event_btnJustoActionPerformed
+
+    private void btn10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn10ActionPerformed
+        sumar(10000);
+    }//GEN-LAST:event_btn10ActionPerformed
+
+    private void btn20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn20ActionPerformed
+        sumar(20000);
+    }//GEN-LAST:event_btn20ActionPerformed
+
+    private void btn50ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn50ActionPerformed
+        sumar(50000);
+    }//GEN-LAST:event_btn50ActionPerformed
+
+    private void btn100ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn100ActionPerformed
+        sumar(100000);
+    }//GEN-LAST:event_btn100ActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        txtPago.setText("");
+        txtPago.requestFocusInWindow();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
+
+    private void btnListoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnListoActionPerformed
+        dispose();
+    }//GEN-LAST:event_btnListoActionPerformed
+
+    private void txtPagoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPagoActionPerformed
+        dispose();
+    }//GEN-LAST:event_txtPagoActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn10;
