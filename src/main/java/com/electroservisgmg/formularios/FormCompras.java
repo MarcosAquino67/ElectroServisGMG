@@ -4,14 +4,10 @@
  */
 package com.electroservisgmg.formularios;
 
-import com.electroservisgmg.clases.Caja;
 import com.electroservisgmg.clases.Compra;
 import com.electroservisgmg.clases.DetalleCompra;
 import com.electroservisgmg.clases.Producto;
 import com.electroservisgmg.clases.Proveedor;
-import com.electroservisgmg.clases.Sesion;
-import com.electroservisgmg.clases.Usuario;
-import com.electroservisgmg.metodos.CajaMetodos;
 import com.electroservisgmg.metodos.CompraMetodos;
 import com.electroservisgmg.metodos.ProductoMetodos;
 import com.electroservisgmg.metodos.ProveedorMetodos;
@@ -37,7 +33,6 @@ public class FormCompras extends javax.swing.JPanel {
      */
     public FormCompras() {
         initComponents();
-        txtBuscar.setText("");
         crearDateChooser();
         crearCampoCodigoBarras();
         UiTheme.styleTable(tblCompras);
@@ -49,15 +44,10 @@ public class FormCompras extends javax.swing.JPanel {
         cargarEstados();
         cargarTabla("");
         pintarDetalle();
-        btnBuscar.addActionListener(e -> buscar());
-        btnNuevo.addActionListener(e -> limpiar());
-        btnAnular.addActionListener(e -> anular());
-        btnAgregar.addActionListener(e -> agregar());
-        btnQuitar.addActionListener(e -> quitarFila());
-        btnGuardar.addActionListener(e -> guardar());
-        btnLimpiar.addActionListener(e -> limpiar());
+        // Los botones y el campo de busqueda se conectan desde el disenador
+        // (pestana Events -> actionPerformed). Aca quedan solo los extras que
+        // el disenador no modela.
         txtCodigoBarras.addActionListener(e -> agregarPorCodigo());
-        txtBuscar.addActionListener(e -> buscar());
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
@@ -190,58 +180,9 @@ public class FormCompras extends javax.swing.JPanel {
                 new String[]{"COMPLETADA", "PENDIENTE", "ANULADA"}));
     }
 
-    private int idProveedorSeleccionado() {
-        int i = cboProveedor.getSelectedIndex();
-        if (i < 0 || i >= listaProveedores.size()) return -1;
-        return listaProveedores.get(i).getIdProveedor();
-    }
-
-    private int idProductoSeleccionado() {
-        int i = cboProducto.getSelectedIndex();
-        if (i < 0 || i >= listaProductos.size()) return -1;
-        return listaProductos.get(i).getIdProducto();
-    }
-
-    private String nombreProveedor(int id) {
-        for (Proveedor p : listaProveedores) if (p.getIdProveedor() == id) return p.getNombre();
-        return "-";
-    }
-
-    private String nombreProducto(int id) {
-        for (Producto p : listaProductos) if (p.getIdProducto() == id) return p.getNombre();
-        return "Producto #" + id;
-    }
-
     // ---- tabla de compras ----
     private void cargarTabla(String filtro) {
-        java.util.List<Compra> lista = new CompraMetodos().listar();
-        String f = filtro == null ? "" : filtro.toLowerCase();
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy");
-        java.util.List<Compra> fil = new java.util.ArrayList<>();
-        for (Compra c : lista) {
-            String prov = nombreProveedor(c.getIdProveedor());
-            String fecha = c.getFechaCompra() == null ? "" : sdf.format(c.getFechaCompra());
-            if (f.isEmpty() || String.valueOf(c.getIdCompra()).contains(f)
-                    || prov.toLowerCase().contains(f)
-                    || (c.getEstado() != null && c.getEstado().toLowerCase().contains(f))
-                    || fecha.contains(f)) fil.add(c);
-        }
-        String[] cols = {"ID", "Proveedor", "Fecha", "Total", "Estado"};
-        Object[][] data = new Object[fil.size()][5];
-        for (int i = 0; i < fil.size(); i++) {
-            Compra c = fil.get(i);
-            data[i] = new Object[]{c.getIdCompra(), nombreProveedor(c.getIdProveedor()),
-                c.getFechaCompra() == null ? "" : sdf.format(c.getFechaCompra()),
-                UiTheme.gs(c.getTotal()), c.getEstado()};
-        }
-        tblCompras.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int cc) { return false; }
-        });
-        tblCompras.getColumnModel().getColumn(0).setPreferredWidth(50);
-        tblCompras.getColumnModel().getColumn(1).setPreferredWidth(260);
-        tblCompras.getColumnModel().getColumn(2).setPreferredWidth(110);
-        tblCompras.getColumnModel().getColumn(3).setPreferredWidth(130);
-        tblCompras.getColumnModel().getColumn(4).setPreferredWidth(120);
+        new CompraMetodos().mostrar(tblCompras, filtro);
         UiTheme.styleTable(tblCompras);
     }
 
@@ -251,77 +192,20 @@ public class FormCompras extends javax.swing.JPanel {
 
     // ---- detalle en memoria ----
     private void pintarDetalle() {
-        String[] cols = {"Producto", "Cant.", "P. Unit.", "Subtotal"};
-        Object[][] data = new Object[detalle.size()][4];
-        for (int i = 0; i < detalle.size(); i++) {
-            DetalleCompra d = detalle.get(i);
-            data[i] = new Object[]{nombreProducto(d.getIdProducto()), d.getCantidad(),
-                UiTheme.gs(d.getPrecioUnitario()), UiTheme.gs(d.getSubtotal())};
-        }
-        tblDetalle.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int cc) { return false; }
-        });
-        tblDetalle.getColumnModel().getColumn(0).setPreferredWidth(180);
-        tblDetalle.getColumnModel().getColumn(1).setPreferredWidth(50);
-        tblDetalle.getColumnModel().getColumn(2).setPreferredWidth(110);
-        tblDetalle.getColumnModel().getColumn(3).setPreferredWidth(110);
+        new CompraMetodos().mostrarDetalle(tblDetalle, detalle, lblTotal);
         UiTheme.styleTable(tblDetalle);
-        actualizarTotal();
-    }
-
-    private void actualizarTotal() {
-        double t = 0;
-        for (DetalleCompra d : detalle) t += d.getSubtotal();
-        lblTotal.setText("Total: " + UiTheme.gs(t));
     }
 
     private void agregar() {
-        int idProd = idProductoSeleccionado();
-        if (idProd < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un producto");
-            return;
+        if (new CompraMetodos().agregar(cboProducto, txtCantidad, txtPrecioUnit, detalle, tblDetalle, lblTotal)) {
+            txtCantidad.setText("");
+            txtPrecioUnit.setText("");
+            cboProducto.requestFocus();
         }
-        int cant;
-        double pu;
-        try {
-            cant = UiTheme.parseGsInt(txtCantidad.getText().trim());
-            if (cant < 1) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "La cantidad debe ser un número ≥ 1");
-            return;
-        }
-        try {
-            pu = UiTheme.parseGs(txtPrecioUnit.getText().trim());
-            if (pu < 0) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "El precio unitario debe ser un número válido (≥ 0)");
-            return;
-        }
-        // si el producto ya esta cargado con el mismo precio, se le suma la cantidad
-        boolean sumado = false;
-        for (DetalleCompra d : detalle) {
-            if (d.getIdProducto() == idProd && Math.abs(d.getPrecioUnitario() - pu) < 0.01) {
-                d.setCantidad(d.getCantidad() + cant);
-                d.setSubtotal(d.getCantidad() * d.getPrecioUnitario());
-                sumado = true;
-                break;
-            }
-        }
-        if (!sumado) detalle.add(new DetalleCompra(0, 0, idProd, cant, pu, cant * pu));
-        pintarDetalle();
-        txtCantidad.setText("");
-        txtPrecioUnit.setText("");
-        cboProducto.requestFocus();
     }
 
     private void quitarFila() {
-        int fila = tblDetalle.getSelectedRow();
-        if (fila < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Seleccione una fila del detalle");
-            return;
-        }
-        detalle.remove(fila);
-        pintarDetalle();
+        new CompraMetodos().quitar(tblDetalle, detalle, lblTotal);
     }
 
     // ---- seleccionar compra de la tabla (vista) ----
@@ -352,52 +236,10 @@ public class FormCompras extends javax.swing.JPanel {
 
     // ---- acciones ----
     private void guardar() {
-        if (idCompraActual != -1) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "La compra #" + idCompraActual + " ya está registrada.\n"
-                    + "Presione '+ Nueva' para registrar otra compra.");
-            return;
+        if (new CompraMetodos().guardar(idCompraActual, dcFecha, cboProveedor, cboEstado, detalle)) {
+            cargarTabla(txtBuscar.getText().trim());
+            limpiar();
         }
-        if (dcFecha.getDate() == null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Elija la fecha de la compra");
-            return;
-        }
-        int idProv = idProveedorSeleccionado();
-        if (idProv < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un proveedor");
-            return;
-        }
-        if (detalle.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Agregue al menos un producto al detalle");
-            return;
-        }
-        Compra c = new Compra();
-        c.setIdProveedor(idProv);
-        Usuario u = Sesion.getUsuario();
-        c.setIdUsuario(u != null ? u.getIdUsuario() : 1);
-        c.setFechaCompra(dcFecha.getDate());
-        double total = 0;
-        for (DetalleCompra d : detalle) total += d.getSubtotal();
-        c.setTotal(total);
-        c.setEstado(String.valueOf(cboEstado.getSelectedItem()));
-        boolean ok = new CompraMetodos().registrarCompra(c, detalle);
-        if (!ok) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Error al registrar la compra");
-            return;
-        }
-        String extra = "";
-        if (!"ANULADA".equals(c.getEstado())) {
-            CajaMetodos cm = new CajaMetodos();
-            Caja caja = cm.cajaAbierta();
-            if (caja != null) {
-                cm.registrarMovimiento(caja.getIdCaja(), "EGRESO", total, "Compra #" + c.getIdCompra());
-                extra = "\nEgreso asentado en la caja #" + caja.getIdCaja() + ".";
-            }
-        }
-        javax.swing.JOptionPane.showMessageDialog(this,
-                "Compra #" + c.getIdCompra() + " registrada (stock actualizado)." + extra);
-        cargarTabla(txtBuscar.getText().trim());
-        limpiar();
     }
 
     private void anular() {
@@ -406,32 +248,11 @@ public class FormCompras extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Seleccione una compra de la tabla");
             return;
         }
-        int id = ((Number) tblCompras.getValueAt(fila, 0)).intValue();
-        String estado = String.valueOf(tblCompras.getValueAt(fila, 4));
-        if ("ANULADA".equals(estado)) {
-            javax.swing.JOptionPane.showMessageDialog(this, "La compra #" + id + " ya está anulada");
-            return;
-        }
         int conf = javax.swing.JOptionPane.showConfirmDialog(this,
-                "¿Anular la compra #" + id + "?", "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
+                "¿Anular la compra #" + tblCompras.getValueAt(fila, 0) + "?", "Confirmar",
+                javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        boolean ok = new CompraMetodos().anular(id);
-        if (ok) {
-            for (Compra c : new CompraMetodos().listar()) {
-                if (c.getIdCompra() == id) {
-                    CajaMetodos cm = new CajaMetodos();
-                    Caja caja = cm.cajaAbierta();
-                    if (caja != null) {
-                        cm.registrarMovimiento(caja.getIdCaja(), "INGRESO", c.getTotal(),
-                                "Anulación compra #" + id);
-                    }
-                    break;
-                }
-            }
-        }
-        javax.swing.JOptionPane.showMessageDialog(this,
-                ok ? "Compra anulada (stock devuelto)" : "No se pudo anular");
-        if (ok) {
+        if (new CompraMetodos().anular(tblCompras)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -513,6 +334,7 @@ public class FormCompras extends javax.swing.JPanel {
         txtBuscar.setBackground(new java.awt.Color(15, 23, 42));
         txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtBuscar.setForeground(new java.awt.Color(243, 244, 246));
+        txtBuscar.addActionListener(this::txtBuscarActionPerformed);
         panelNorte.add(txtBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 75, 250, 35));
 
         btnBuscar.setBackground(new java.awt.Color(51, 65, 85));
@@ -522,6 +344,7 @@ public class FormCompras extends javax.swing.JPanel {
         btnBuscar.setBorderPainted(false);
         btnBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBuscar.setFocusPainted(false);
+        btnBuscar.addActionListener(this::btnBuscarActionPerformed);
         panelNorte.add(btnBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(275, 75, 110, 35));
 
         btnNuevo.setBackground(new java.awt.Color(56, 189, 248));
@@ -531,6 +354,7 @@ public class FormCompras extends javax.swing.JPanel {
         btnNuevo.setBorderPainted(false);
         btnNuevo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnNuevo.setFocusPainted(false);
+        btnNuevo.addActionListener(this::btnNuevoActionPerformed);
         panelNorte.add(btnNuevo, new org.netbeans.lib.awtextra.AbsoluteConstraints(385, 75, 110, 35));
 
         btnAnular.setBackground(new java.awt.Color(239, 68, 68));
@@ -540,6 +364,7 @@ public class FormCompras extends javax.swing.JPanel {
         btnAnular.setBorderPainted(false);
         btnAnular.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnAnular.setFocusPainted(false);
+        btnAnular.addActionListener(this::btnAnularActionPerformed);
         panelNorte.add(btnAnular, new org.netbeans.lib.awtextra.AbsoluteConstraints(505, 75, 110, 35));
 
         jPanel1.add(panelNorte, java.awt.BorderLayout.NORTH);
@@ -638,11 +463,13 @@ public class FormCompras extends javax.swing.JPanel {
         btnAgregar.setBorderPainted(false);
         btnAgregar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnAgregar.setFocusPainted(false);
+        btnAgregar.addActionListener(this::btnAgregarActionPerformed);
         panelForm.add(btnAgregar, new org.netbeans.lib.awtextra.AbsoluteConstraints(600, 115, 110, 35));
 
         btnQuitar.setBackground(new java.awt.Color(51, 65, 85));
         btnQuitar.setForeground(new java.awt.Color(243, 244, 246));
         btnQuitar.setText("Quitar fila");
+        btnQuitar.addActionListener(this::btnQuitarActionPerformed);
         panelForm.add(btnQuitar, new org.netbeans.lib.awtextra.AbsoluteConstraints(720, 115, 110, 35));
 
         tblDetalle.setBackground(new java.awt.Color(30, 41, 59));
@@ -675,11 +502,13 @@ public class FormCompras extends javax.swing.JPanel {
         btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnGuardar.setForeground(new java.awt.Color(255, 255, 255));
         btnGuardar.setText("Guardar");
+        btnGuardar.addActionListener(this::btnGuardarActionPerformed);
         panelForm.add(btnGuardar, new org.netbeans.lib.awtextra.AbsoluteConstraints(705, 215, 150, 40));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
         btnLimpiar.setForeground(new java.awt.Color(243, 244, 246));
         btnLimpiar.setText("Limpiar");
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(865, 215, 130, 40));
 
         jPanel1.add(panelForm, java.awt.BorderLayout.SOUTH);
@@ -695,6 +524,38 @@ public class FormCompras extends javax.swing.JPanel {
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 644, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void txtBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_txtBuscarActionPerformed
+
+    private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_btnBuscarActionPerformed
+
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void btnAnularActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAnularActionPerformed
+        anular();
+    }//GEN-LAST:event_btnAnularActionPerformed
+
+    private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
+        agregar();
+    }//GEN-LAST:event_btnAgregarActionPerformed
+
+    private void btnQuitarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnQuitarActionPerformed
+        quitarFila();
+    }//GEN-LAST:event_btnQuitarActionPerformed
+
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        guardar();
+    }//GEN-LAST:event_btnGuardarActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
