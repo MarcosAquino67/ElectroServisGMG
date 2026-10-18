@@ -25,19 +25,14 @@ public class FormEquipos extends javax.swing.JPanel {
      */
     public FormEquipos() {
         initComponents();
-        txtBuscar.setText("");
         crearBotonAddTipo();
         cargarClientes();
         cargarTipos();
         UiTheme.styleTable(tblEquipos);
         cargarTabla("");
-        btnBuscar.addActionListener(e -> buscar());
-        btnNuevo.addActionListener(e -> limpiar());
-        btnEditar.addActionListener(e -> editar());
-        btnEliminar.addActionListener(e -> eliminar());
-        btnGuardar.addActionListener(e -> guardar());
-        btnLimpiar.addActionListener(e -> limpiar());
-        txtBuscar.addActionListener(e -> buscar());
+        // Los botones y el campo de busqueda se conectan desde el disenador
+        // (pestana Events -> actionPerformed). Aca quedan solo los extras que
+        // el disenador no modela.
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
@@ -92,47 +87,14 @@ public class FormEquipos extends javax.swing.JPanel {
         }
     }
 
-    private int idClienteSeleccionado() {
-        int i = cboCliente.getSelectedIndex();
-        if (i < 0 || i >= listaClientes.size()) return -1;
-        return listaClientes.get(i).getIdCliente();
-    }
-
     private void seleccionarCliente(int id) {
         for (int i = 0; i < listaClientes.size(); i++) {
             if (listaClientes.get(i).getIdCliente() == id) { cboCliente.setSelectedIndex(i); return; }
         }
     }
 
-    private java.util.Map<Integer, String> mapaClientes() {
-        java.util.Map<Integer, String> m = new java.util.HashMap<>();
-        for (Cliente c : new ClienteMetodos().listar()) m.put(c.getIdCliente(), c.getNombre() + " " + c.getApellido());
-        return m;
-    }
-
     private void cargarTabla(String filtro) {
-        EquipoMetodos em = new EquipoMetodos();
-        java.util.List<Equipo> lista = em.listar();
-        java.util.Map<Integer, String> cli = mapaClientes();
-        String f = filtro == null ? "" : filtro.toLowerCase();
-        java.util.List<Equipo> fil = new java.util.ArrayList<>();
-        for (Equipo e : lista) {
-            String nomCli = cli.getOrDefault(e.getIdCliente(), "");
-            if (f.isEmpty() || e.getMarca().toLowerCase().contains(f)
-                    || e.getModelo().toLowerCase().contains(f)
-                    || e.getNroSerie().toLowerCase().contains(f)
-                    || nomCli.toLowerCase().contains(f)) fil.add(e);
-        }
-        String[] cols = {"ID", "Cliente", "Tipo", "Marca", "Modelo", "N° Serie"};
-        Object[][] data = new Object[fil.size()][6];
-        for (int i = 0; i < fil.size(); i++) {
-            Equipo e = fil.get(i);
-            data[i] = new Object[]{e.getIdEquipo(), cli.getOrDefault(e.getIdCliente(), "ID " + e.getIdCliente()),
-                e.getTipo(), e.getMarca(), e.getModelo(), e.getNroSerie()};
-        }
-        tblEquipos.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        });
+        new EquipoMetodos().mostrar(tblEquipos, filtro);
         UiTheme.styleTable(tblEquipos);
     }
 
@@ -181,33 +143,7 @@ public class FormEquipos extends javax.swing.JPanel {
     }
 
     private void guardar() {
-        int idCli = idClienteSeleccionado();
-        if (idCli < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Registre un cliente primero");
-            return;
-        }
-        Object tipoSel = cboTipo.getSelectedItem();
-        if (tipoSel == null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un tipo");
-            return;
-        }
-        Equipo e = new Equipo();
-        e.setIdCliente(idCli);
-        e.setTipo(tipoSel.toString());
-        e.setMarca(txtMarca.getText().trim());
-        e.setModelo(txtModelo.getText().trim());
-        e.setNroSerie(txtSerie.getText().trim());
-        e.setFallaReportada(txtFalla.getText().trim());
-        EquipoMetodos em = new EquipoMetodos();
-        boolean ok;
-        if (txtId.getText().trim().isEmpty()) {
-            ok = em.insertar(e);
-        } else {
-            e.setIdEquipo(Integer.parseInt(txtId.getText().trim()));
-            ok = em.modificar(e);
-        }
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Guardado correctamente" : "Error al guardar");
-        if (ok) {
+        if (new EquipoMetodos().guardar(txtId, cboCliente, cboTipo, txtMarca, txtModelo, txtSerie, txtFalla)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -219,14 +155,11 @@ public class FormEquipos extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un equipo de la tabla");
             return;
         }
-        int id = (int) tblEquipos.getValueAt(fila, 0);
         int conf = javax.swing.JOptionPane.showConfirmDialog(this,
                 "¿Eliminar equipo '" + tblEquipos.getValueAt(fila, 3) + " " + tblEquipos.getValueAt(fila, 4) + "'?",
                 "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        boolean ok = new EquipoMetodos().eliminar(id);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Eliminado" : "Error al eliminar");
-        if (ok) {
+        if (new EquipoMetodos().eliminar(txtId)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -290,6 +223,7 @@ public class FormEquipos extends javax.swing.JPanel {
         txtBuscar.setBackground(new java.awt.Color(15, 23, 42));
         txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtBuscar.setForeground(new java.awt.Color(243, 244, 246));
+        txtBuscar.addActionListener(this::txtBuscarActionPerformed);
         panelNorte.add(txtBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 75, 250, 35));
 
         btnBuscar.setBackground(new java.awt.Color(51, 65, 85));
@@ -299,6 +233,7 @@ public class FormEquipos extends javax.swing.JPanel {
         btnBuscar.setBorderPainted(false);
         btnBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBuscar.setFocusPainted(false);
+        btnBuscar.addActionListener(this::btnBuscarActionPerformed);
         panelNorte.add(btnBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(275, 75, 100, 35));
 
         btnNuevo.setBackground(new java.awt.Color(56, 189, 248));
@@ -317,6 +252,7 @@ public class FormEquipos extends javax.swing.JPanel {
         btnEditar.setBorderPainted(false);
         btnEditar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnEditar.setFocusPainted(false);
+        btnEditar.addActionListener(this::btnEditarActionPerformed);
         panelNorte.add(btnEditar, new org.netbeans.lib.awtextra.AbsoluteConstraints(505, 75, 100, 35));
 
         btnEliminar.setBackground(new java.awt.Color(239, 68, 68));
@@ -326,6 +262,7 @@ public class FormEquipos extends javax.swing.JPanel {
         btnEliminar.setBorderPainted(false);
         btnEliminar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnEliminar.setFocusPainted(false);
+        btnEliminar.addActionListener(this::btnEliminarActionPerformed);
         panelNorte.add(btnEliminar, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 75, 110, 35));
 
         jPanel1.add(panelNorte, java.awt.BorderLayout.PAGE_START);
@@ -436,6 +373,7 @@ public class FormEquipos extends javax.swing.JPanel {
         btnGuardar.setForeground(new java.awt.Color(255, 255, 255));
         btnGuardar.setText("Guardar");
         btnGuardar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnGuardar.addActionListener(this::btnGuardarActionPerformed);
         panelForm.add(btnGuardar, new org.netbeans.lib.awtextra.AbsoluteConstraints(710, 110, 150, 38));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
@@ -443,6 +381,7 @@ public class FormEquipos extends javax.swing.JPanel {
         btnLimpiar.setForeground(new java.awt.Color(243, 244, 246));
         btnLimpiar.setText("Limpiar");
         btnLimpiar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(870, 110, 150, 38));
 
         jPanel1.add(panelForm, java.awt.BorderLayout.PAGE_END);
@@ -464,8 +403,32 @@ public class FormEquipos extends javax.swing.JPanel {
     }//GEN-LAST:event_txtSerieActionPerformed
 
     private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
-        // TODO add your handling code here:
+        limpiar();
     }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void txtBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_txtBuscarActionPerformed
+
+    private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_btnBuscarActionPerformed
+
+    private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
+        editar();
+    }//GEN-LAST:event_btnEditarActionPerformed
+
+    private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
+        eliminar();
+    }//GEN-LAST:event_btnEliminarActionPerformed
+
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        guardar();
+    }//GEN-LAST:event_btnGuardarActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
