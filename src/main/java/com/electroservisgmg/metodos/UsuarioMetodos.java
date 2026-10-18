@@ -45,6 +45,29 @@ public class UsuarioMetodos {
         return null;
     }
     /**
+     * Lee el usuario y la clave del formulario, valida e inicia sesion. Muestra
+     * los avisos. Devuelve true si entro (la sesion queda cargada en Sesion).
+     */
+    public boolean ingresar(javax.swing.JTextField txtUsuario, javax.swing.JPasswordField txtClave) {
+        String user = txtUsuario.getText().trim();
+        String pass = new String(txtClave.getPassword());
+        if (user.isEmpty() || pass.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(null, "Complete usuario y clave");
+            return false;
+        }
+        Usuario u = validarLogin(user, pass);
+        if (u == null) {
+            javax.swing.JOptionPane.showMessageDialog(null, "Usuario o clave incorrectos",
+                    "Acceso denegado", javax.swing.JOptionPane.ERROR_MESSAGE);
+            txtClave.setText("");
+            txtClave.requestFocus();
+            return false;
+        }
+        com.electroservisgmg.clases.Sesion.setUsuario(u);
+        return true;
+    }
+
+    /**
      * Lee los campos del formulario, valida, decide si es alta o modificacion,
      * guarda y muestra el mensaje. Devuelve true si guardo, asi el formulario
      * sabe si refrescar la tabla.

@@ -27,18 +27,8 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
             UiTheme.fondoDegradadoSidebar(panelSidebar);
             panelSidebar.repaint();
         });
-        btnPanel.addActionListener(e -> btnPanelActionPerformed(e));
-        btnUsuarios.addActionListener(e -> mostrarPanel(new FormUsuarios()));
-        btnAjustes.addActionListener(e -> mostrarPanel(new FormAjustes()));
-        btnClientes.addActionListener(e -> mostrarPanel(new FormClientes()));
-        btnProveedores.addActionListener(e -> mostrarPanel(new FormProveedores()));
-        btnEquipos.addActionListener(e -> mostrarPanel(new FormEquipos()));
-        btnInventario.addActionListener(e -> mostrarPanel(new FormProductos()));
-        btnOrdenes.addActionListener(e -> mostrarPanel(new FormOrdenServicio()));
-        btnCompras.addActionListener(e -> mostrarPanel(new FormCompras()));
-        btnVentas.addActionListener(e -> mostrarPanel(new FormVentas()));
-        btnCaja.addActionListener(e -> mostrarPanel(new FormCaja()));
-        btnReportes.addActionListener(e -> mostrarPanel(new FormReportes()));
+        // Los botones del menu se conectan desde el disenador (pestana Events
+        // -> actionPerformed). Aca queda solo el armado de la ventana.
         refrescarUsuario();
         aplicarPermisos();
         com.electroservisgmg.clases.Sesion.setListener(this::refrescarUsuario);
@@ -100,10 +90,6 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         panelContenedor.add(panel, java.awt.BorderLayout.CENTER);
         panelContenedor.revalidate();
         panelContenedor.repaint();
-    }
-
-    private void btnPanelActionPerformed(java.awt.event.ActionEvent evt) {
-        mostrarPanel(new FormDashboard());
     }
 
     /**
@@ -174,6 +160,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnPanel.setFocusPainted(false);
         btnPanel.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnPanel.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnPanel.addActionListener(this::btnPanelActionPerformed);
         panelSidebar.add(btnPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 82, 230, 36));
 
         btnOrdenes.setBackground(new java.awt.Color(30, 41, 59));
@@ -184,6 +171,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnOrdenes.setFocusPainted(false);
         btnOrdenes.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnOrdenes.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnOrdenes.addActionListener(this::btnOrdenesActionPerformed);
         panelSidebar.add(btnOrdenes, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 124, 230, 36));
 
         btnVentas.setBackground(new java.awt.Color(30, 41, 59));
@@ -194,6 +182,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnVentas.setFocusPainted(false);
         btnVentas.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnVentas.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnVentas.addActionListener(this::btnVentasActionPerformed);
         panelSidebar.add(btnVentas, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 166, 230, 36));
 
         lblSecGestion.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
@@ -209,6 +198,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnInventario.setFocusPainted(false);
         btnInventario.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnInventario.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnInventario.addActionListener(this::btnInventarioActionPerformed);
         panelSidebar.add(btnInventario, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 240, 230, 36));
 
         btnClientes.setBackground(new java.awt.Color(30, 41, 59));
@@ -219,6 +209,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnClientes.setFocusPainted(false);
         btnClientes.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnClientes.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnClientes.addActionListener(this::btnClientesActionPerformed);
         panelSidebar.add(btnClientes, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 282, 230, 36));
 
         btnCompras.setBackground(new java.awt.Color(30, 41, 59));
@@ -229,6 +220,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnCompras.setFocusPainted(false);
         btnCompras.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnCompras.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnCompras.addActionListener(this::btnComprasActionPerformed);
         panelSidebar.add(btnCompras, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 324, 230, 36));
 
         btnProveedores.setBackground(new java.awt.Color(30, 41, 59));
@@ -239,6 +231,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnProveedores.setFocusPainted(false);
         btnProveedores.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnProveedores.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnProveedores.addActionListener(this::btnProveedoresActionPerformed);
         panelSidebar.add(btnProveedores, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 366, 230, 36));
 
         btnEquipos.setBackground(new java.awt.Color(30, 41, 59));
@@ -249,6 +242,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnEquipos.setFocusPainted(false);
         btnEquipos.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnEquipos.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnEquipos.addActionListener(this::btnEquiposActionPerformed);
         panelSidebar.add(btnEquipos, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 408, 230, 36));
 
         lblSecSistema.setFont(new java.awt.Font("Segoe UI", 1, 10)); // NOI18N
@@ -264,6 +258,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnCaja.setFocusPainted(false);
         btnCaja.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnCaja.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnCaja.addActionListener(this::btnCajaActionPerformed);
         panelSidebar.add(btnCaja, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 482, 230, 36));
 
         btnReportes.setBackground(new java.awt.Color(30, 41, 59));
@@ -274,6 +269,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnReportes.setFocusPainted(false);
         btnReportes.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnReportes.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnReportes.addActionListener(this::btnReportesActionPerformed);
         panelSidebar.add(btnReportes, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 524, 230, 36));
 
         btnUsuarios.setBackground(new java.awt.Color(30, 41, 59));
@@ -284,6 +280,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnUsuarios.setFocusPainted(false);
         btnUsuarios.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnUsuarios.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnUsuarios.addActionListener(this::btnUsuariosActionPerformed);
         panelSidebar.add(btnUsuarios, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 566, 230, 36));
 
         btnAjustes.setBackground(new java.awt.Color(30, 41, 59));
@@ -294,6 +291,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         btnAjustes.setFocusPainted(false);
         btnAjustes.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         btnAjustes.setMargin(new java.awt.Insets(0, 15, 0, 15));
+        btnAjustes.addActionListener(this::btnAjustesActionPerformed);
         panelSidebar.add(btnAjustes, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 608, 230, 36));
 
         panelUsuario.setBackground(new java.awt.Color(15, 23, 42));
@@ -346,6 +344,54 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnPanelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPanelActionPerformed
+        mostrarPanel(new FormDashboard());
+    }//GEN-LAST:event_btnPanelActionPerformed
+
+    private void btnOrdenesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOrdenesActionPerformed
+        mostrarPanel(new FormOrdenServicio());
+    }//GEN-LAST:event_btnOrdenesActionPerformed
+
+    private void btnVentasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVentasActionPerformed
+        mostrarPanel(new FormVentas());
+    }//GEN-LAST:event_btnVentasActionPerformed
+
+    private void btnInventarioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInventarioActionPerformed
+        mostrarPanel(new FormProductos());
+    }//GEN-LAST:event_btnInventarioActionPerformed
+
+    private void btnClientesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClientesActionPerformed
+        mostrarPanel(new FormClientes());
+    }//GEN-LAST:event_btnClientesActionPerformed
+
+    private void btnComprasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnComprasActionPerformed
+        mostrarPanel(new FormCompras());
+    }//GEN-LAST:event_btnComprasActionPerformed
+
+    private void btnProveedoresActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnProveedoresActionPerformed
+        mostrarPanel(new FormProveedores());
+    }//GEN-LAST:event_btnProveedoresActionPerformed
+
+    private void btnEquiposActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEquiposActionPerformed
+        mostrarPanel(new FormEquipos());
+    }//GEN-LAST:event_btnEquiposActionPerformed
+
+    private void btnCajaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCajaActionPerformed
+        mostrarPanel(new FormCaja());
+    }//GEN-LAST:event_btnCajaActionPerformed
+
+    private void btnReportesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnReportesActionPerformed
+        mostrarPanel(new FormReportes());
+    }//GEN-LAST:event_btnReportesActionPerformed
+
+    private void btnUsuariosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUsuariosActionPerformed
+        mostrarPanel(new FormUsuarios());
+    }//GEN-LAST:event_btnUsuariosActionPerformed
+
+    private void btnAjustesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAjustesActionPerformed
+        mostrarPanel(new FormAjustes());
+    }//GEN-LAST:event_btnAjustesActionPerformed
 
     /**
      * @param args the command line arguments

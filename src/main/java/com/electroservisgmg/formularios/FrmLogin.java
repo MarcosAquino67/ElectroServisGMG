@@ -156,38 +156,28 @@ public class FrmLogin extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSalirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalirActionPerformed
-System.exit(0);
-        // TODO add your handling code here:
+        System.exit(0);
     }//GEN-LAST:event_btnSalirActionPerformed
 
     private void txtUsuarioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtUsuarioActionPerformed
-        // TODO add your handling code here:
+        ingresar();
     }//GEN-LAST:event_txtUsuarioActionPerformed
 
     private void btnIngresarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnIngresarActionPerformed
-        String user = txtUsuario.getText().trim();
-        String pass = new String(txtClave.getPassword());
-        if (user.isEmpty() || pass.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Complete usuario y clave");
-            return;
-        }
-        com.electroservisgmg.clases.Usuario u =
-            new com.electroservisgmg.metodos.UsuarioMetodos().validarLogin(user, pass);
-        if (u == null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Usuario o clave incorrectos",
-                "Acceso denegado", javax.swing.JOptionPane.ERROR_MESSAGE);
-            txtClave.setText("");
-            txtClave.requestFocus();
-            return;
-        }
-        com.electroservisgmg.clases.Sesion.setUsuario(u);
-        new FrmMenuPrincipal().setVisible(true);
-        this.dispose();
+        ingresar();
     }//GEN-LAST:event_btnIngresarActionPerformed
 
     private void txtClaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtClaveActionPerformed
-        // TODO add your handling code here:
+        ingresar();
     }//GEN-LAST:event_txtClaveActionPerformed
+
+    /** Valida el login (lo hace UsuarioMetodos) y abre el menu principal. */
+    private void ingresar() {
+        if (new com.electroservisgmg.metodos.UsuarioMetodos().ingresar(txtUsuario, txtClave)) {
+            new FrmMenuPrincipal().setVisible(true);
+            dispose();
+        }
+    }
 
     /**
      * @param args the command line arguments
