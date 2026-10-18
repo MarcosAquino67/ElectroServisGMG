@@ -32,7 +32,6 @@ public class FormProductos extends javax.swing.JPanel {
      */
     public FormProductos() {
         initComponents();
-        txtBuscar.setText("");
         crearCampoCodigoBarras();
         crearCampoStockMinimo();
         crearBotonEtiquetas();
@@ -43,14 +42,9 @@ public class FormProductos extends javax.swing.JPanel {
         UiTheme.miles(txtPrecioVenta, true);
         cargarProveedores();
         cargarTabla("");
-        btnBuscar.addActionListener(e -> buscar());
-        btnNuevo.addActionListener(e -> limpiar());
-        btnEditar.addActionListener(e -> editar());
-        btnEliminar.addActionListener(e -> eliminar());
-        btnGuardar.addActionListener(e -> guardar());
-        btnLimpiar.addActionListener(e -> limpiar());
-        btnFoto.addActionListener(e -> seleccionarFoto());
-        txtBuscar.addActionListener(e -> buscar());
+        // Los botones y el campo de busqueda se conectan desde el disenador
+        // (pestana Events -> actionPerformed). Aca quedan solo los extras que
+        // el disenador no modela.
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
@@ -225,12 +219,6 @@ public class FormProductos extends javax.swing.JPanel {
         cboProveedor.setModel(m);
     }
 
-    private int idProveedorSeleccionado() {
-        int i = cboProveedor.getSelectedIndex();
-        if (i <= 0 || i - 1 >= listaProveedores.size()) return 0;
-        return listaProveedores.get(i - 1).getIdProveedor();
-    }
-
     private void seleccionarProveedor(int id) {
         if (id <= 0) { cboProveedor.setSelectedIndex(0); return; }
         for (int i = 0; i < listaProveedores.size(); i++) {
@@ -239,56 +227,10 @@ public class FormProductos extends javax.swing.JPanel {
         cboProveedor.setSelectedIndex(0);
     }
 
-    private String nombreProveedor(int id) {
-        for (Proveedor p : listaProveedores) if (p.getIdProveedor() == id) return p.getNombre();
-        return "";
-    }
-
     // ---- tabla ----
     private void cargarTabla(String filtro) {
-        java.util.List<Producto> lista = new ProductoMetodos().listar();
-        String f = filtro == null ? "" : filtro.toLowerCase();
-        java.util.List<Producto> fil = new java.util.ArrayList<>();
-        for (Producto p : lista) {
-            String prov = nombreProveedor(p.getIdProveedor());
-            if (f.isEmpty() || p.getNombre().toLowerCase().contains(f)
-                    || (p.getCodigo() != null && p.getCodigo().toLowerCase().contains(f))
-                    || (p.getCodigoBarras() != null && p.getCodigoBarras().toLowerCase().contains(f))
-                    || (p.getDescripcion() != null && p.getDescripcion().toLowerCase().contains(f))
-                    || prov.toLowerCase().contains(f)) fil.add(p);
-        }
-        String[] cols = {"ID", "Código", "Cód. barras", "Nombre", "Stock", "Mín.", "Precio Compra", "Precio Venta", "IVA", "Proveedor", "Descripción"};
-        Object[][] data = new Object[fil.size()][11];
-        for (int i = 0; i < fil.size(); i++) {
-            Producto p = fil.get(i);
-            data[i] = new Object[]{p.getIdProducto(), p.getCodigo() == null ? "" : p.getCodigo(),
-                p.getCodigoBarras() == null ? "" : p.getCodigoBarras(), p.getNombre(), p.getStock(),
-                p.getStockMinimo() > 0 ? p.getStockMinimo() : "",
-                UiTheme.gs(p.getPrecioCompra()), UiTheme.gs(p.getPrecioVenta()), textoIva(p.getIva()),
-                p.getIdProveedor() > 0 ? nombreProveedor(p.getIdProveedor()) : "-",
-                p.getDescripcion() == null ? "" : p.getDescripcion()};
-        }
-        tblProductos.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        });
+        new ProductoMetodos().mostrar(tblProductos, filtro);
         UiTheme.styleTable(tblProductos);
-        // los productos que llegaron al minimo se ven en rojo
-        tblProductos.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
-            @Override public java.awt.Component getTableCellRendererComponent(javax.swing.JTable t, Object val,
-                    boolean sel, boolean foc, int row, int col) {
-                java.awt.Component c = super.getTableCellRendererComponent(t, val, sel, foc, row, col);
-                if (!sel) {
-                    boolean bajo = false;
-                    try {
-                        Object st = t.getValueAt(row, 4), mn = t.getValueAt(row, 5);
-                        bajo = mn instanceof Number && ((Number) mn).intValue() > 0
-                                && st instanceof Number && ((Number) st).intValue() <= ((Number) mn).intValue();
-                    } catch (RuntimeException ignored) {}
-                    c.setForeground(bajo ? UiTheme.DANGER : t.getForeground());
-                }
-                return c;
-            }
-        });
     }
 
     private void buscar() {
@@ -315,26 +257,11 @@ public class FormProductos extends javax.swing.JPanel {
         txtNombre.requestFocus();
     }
 
-    /** Tasa de IVA elegida en el combo (10, 5 o 0). */
-    private double ivaSeleccionado() {
-        int i = cboIva.getSelectedIndex();
-        if (i == 1) return 5;
-        if (i == 2) return 0;
-        return 10;
-    }
-
     /** Ubica el combo en la tasa guardada del producto. */
     private void seleccionarIva(double iva) {
         if (iva >= 9.99) cboIva.setSelectedIndex(0);
         else if (iva >= 4.99) cboIva.setSelectedIndex(1);
         else cboIva.setSelectedIndex(2);
-    }
-
-    /** Texto de la tasa para la tabla. */
-    private static String textoIva(double iva) {
-        if (iva >= 9.99) return "10%";
-        if (iva >= 4.99) return "5%";
-        return "Exenta";
     }
 
     private void llenarDesdeFila() {
@@ -372,59 +299,9 @@ public class FormProductos extends javax.swing.JPanel {
     }
 
     private void guardar() {
-        String nombre = txtNombre.getText().trim();
-        if (nombre.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "El nombre es obligatorio");
-            return;
-        }
-        int stock;
-        int stockMinimo;
-        double pc, pv;
-        try {
-            stock = UiTheme.parseGsInt(txtStock.getText().trim());
-            stockMinimo = UiTheme.parseGsInt(txtStockMinimo.getText().trim());
-            pc = UiTheme.parseGs(txtPrecioCompra.getText().trim());
-            pv = UiTheme.parseGs(txtPrecioVenta.getText().trim());
-            if (stock < 0 || stockMinimo < 0 || pc < 0 || pv < 0) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Stock, stock mínimo y precios deben ser números válidos (≥ 0)");
-            return;
-        }
-        String codigoBarras = txtCodigoBarras.getText().trim();
-        int idActual = 0;
-        try { idActual = Integer.parseInt(txtId.getText().trim()); } catch (NumberFormatException ignored) { }
-        if (!codigoBarras.isEmpty()) {
-            Producto otro = new ProductoMetodos().buscarPorCodigoBarras(codigoBarras);
-            if (otro != null && otro.getIdProducto() != idActual) {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                        "Ese código de barras ya lo tiene el producto \"" + otro.getNombre() + "\".");
-                return;
-            }
-        }
-        Producto p = new Producto();
-        String codigo = txtCodigo.getText().trim();
-        p.setCodigo(codigo.isEmpty() ? null : codigo);
-        p.setCodigoBarras(codigoBarras.isEmpty() ? null : codigoBarras);
-        p.setNombre(nombre);
-        p.setDescripcion(txtDescripcion.getText().trim());
-        p.setStock(stock);
-        p.setStockMinimo(stockMinimo);
-        p.setPrecioCompra(pc);
-        p.setPrecioVenta(pv);
-        p.setIva(ivaSeleccionado());
-        p.setIdProveedor(idProveedorSeleccionado());
-        p.setFoto(fotoSeleccionada.isEmpty() ? null : fotoSeleccionada);
-        ProductoMetodos pm = new ProductoMetodos();
-        boolean ok;
-        if (txtId.getText().trim().isEmpty()) {
-            ok = pm.insertar(p);
-        } else {
-            p.setIdProducto(Integer.parseInt(txtId.getText().trim()));
-            ok = pm.modificar(p);
-        }
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Guardado correctamente"
-                : "Error al guardar" + (ProductoMetodos.ultimoError.isEmpty() ? "" : ":\n" + ProductoMetodos.ultimoError));
-        if (ok) {
+        if (new ProductoMetodos().guardar(txtId, txtCodigo, txtCodigoBarras, txtNombre, txtStock,
+                txtStockMinimo, txtPrecioCompra, txtPrecioVenta, txtDescripcion, cboIva, cboProveedor,
+                fotoSeleccionada)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -436,15 +313,11 @@ public class FormProductos extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un producto de la tabla");
             return;
         }
-        int id = (int) tblProductos.getValueAt(fila, 0);
         int conf = javax.swing.JOptionPane.showConfirmDialog(this,
                 "¿Eliminar producto '" + tblProductos.getValueAt(fila, 1) + "'?",
                 "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        boolean ok = new ProductoMetodos().eliminar(id);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Eliminado"
-                : "No se puede eliminar: tiene ventas o compras asociadas");
-        if (ok) {
+        if (new ProductoMetodos().eliminar(txtId)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -565,6 +438,7 @@ public class FormProductos extends javax.swing.JPanel {
 
         txtBuscar.setBackground(new java.awt.Color(15, 23, 42));
         txtBuscar.setForeground(new java.awt.Color(243, 244, 246));
+        txtBuscar.addActionListener(this::txtBuscarActionPerformed);
         panelNorte.add(txtBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 75, 250, 35));
 
         btnBuscar.setBackground(new java.awt.Color(51, 65, 85));
@@ -573,24 +447,28 @@ public class FormProductos extends javax.swing.JPanel {
         btnBuscar.setText("Buscar");
         btnBuscar.setBorderPainted(false);
         btnBuscar.setFocusPainted(false);
+        btnBuscar.addActionListener(this::btnBuscarActionPerformed);
         panelNorte.add(btnBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(275, 75, 100, 35));
 
         btnNuevo.setBackground(new java.awt.Color(56, 189, 248));
         btnNuevo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnNuevo.setForeground(new java.awt.Color(15, 23, 42));
         btnNuevo.setText("+ Nuevo");
+        btnNuevo.addActionListener(this::btnNuevoActionPerformed);
         panelNorte.add(btnNuevo, new org.netbeans.lib.awtextra.AbsoluteConstraints(385, 75, 110, 35));
 
         btnEditar.setBackground(new java.awt.Color(51, 65, 85));
         btnEditar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnEditar.setForeground(new java.awt.Color(255, 255, 255));
         btnEditar.setText("Editar");
+        btnEditar.addActionListener(this::btnEditarActionPerformed);
         panelNorte.add(btnEditar, new org.netbeans.lib.awtextra.AbsoluteConstraints(505, 75, 100, 35));
 
         btnEliminar.setBackground(new java.awt.Color(239, 68, 68));
         btnEliminar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnEliminar.setForeground(new java.awt.Color(255, 255, 255));
         btnEliminar.setText("Eliminar");
+        btnEliminar.addActionListener(this::btnEliminarActionPerformed);
         panelNorte.add(btnEliminar, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 75, 110, 35));
 
         jPanel1.add(panelNorte, java.awt.BorderLayout.NORTH);
@@ -697,11 +575,13 @@ public class FormProductos extends javax.swing.JPanel {
         btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnGuardar.setForeground(new java.awt.Color(255, 255, 255));
         btnGuardar.setText("Guardar");
+        btnGuardar.addActionListener(this::btnGuardarActionPerformed);
         panelForm.add(btnGuardar, new org.netbeans.lib.awtextra.AbsoluteConstraints(780, 115, 100, 38));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
         btnLimpiar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         btnLimpiar.setText("Limpiar");
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(660, 115, 110, 38));
 
         lblPreview.setBackground(new java.awt.Color(15, 23, 42));
@@ -713,6 +593,7 @@ public class FormProductos extends javax.swing.JPanel {
         btnFoto.setBackground(new java.awt.Color(51, 65, 85));
         btnFoto.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         btnFoto.setText("Seleccionar foto");
+        btnFoto.addActionListener(this::btnFotoActionPerformed);
         panelForm.add(btnFoto, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 115, 170, 35));
 
         lblCodigo.setForeground(new java.awt.Color(156, 163, 175));
@@ -751,6 +632,38 @@ public class FormProductos extends javax.swing.JPanel {
     private void cboIvaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cboIvaActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_cboIvaActionPerformed
+
+    private void txtBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_txtBuscarActionPerformed
+
+    private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_btnBuscarActionPerformed
+
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
+        editar();
+    }//GEN-LAST:event_btnEditarActionPerformed
+
+    private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
+        eliminar();
+    }//GEN-LAST:event_btnEliminarActionPerformed
+
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        guardar();
+    }//GEN-LAST:event_btnGuardarActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
+
+    private void btnFotoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFotoActionPerformed
+        seleccionarFoto();
+    }//GEN-LAST:event_btnFotoActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
