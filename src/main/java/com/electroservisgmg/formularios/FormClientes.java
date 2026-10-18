@@ -20,13 +20,9 @@ public class FormClientes extends javax.swing.JPanel {
         initComponents();
         UiTheme.styleTable(tblClientes);
         cargarTabla("");
-        btnBuscar.addActionListener(e -> buscar());
-        btnNuevo.addActionListener(e -> limpiar());
-        btnEditar.addActionListener(e -> editar());
-        btnEliminar.addActionListener(e -> eliminar());
-        btnGuardar.addActionListener(e -> guardar());
-        btnLimpiar.addActionListener(e -> limpiar());
-        txtBuscar.addActionListener(e -> buscar());
+        // Los botones y el campo de busqueda se conectan desde el disenador
+        // (pestana Events -> actionPerformed). Aca quedan solo los extras que
+        // el disenador no modela.
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
@@ -216,6 +212,7 @@ public class FormClientes extends javax.swing.JPanel {
         txtBuscar.setBackground(new java.awt.Color(15, 23, 42));
         txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtBuscar.setForeground(new java.awt.Color(243, 244, 246));
+        txtBuscar.addActionListener(this::txtBuscarActionPerformed);
         panelNorte.add(txtBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 75, 250, 35));
 
         btnNuevo.setBackground(new java.awt.Color(56, 189, 248));
@@ -224,6 +221,7 @@ public class FormClientes extends javax.swing.JPanel {
         btnNuevo.setText("+ Nuevo");
         btnNuevo.setBorderPainted(false);
         btnNuevo.setFocusPainted(false);
+        btnNuevo.addActionListener(this::btnNuevoActionPerformed);
         panelNorte.add(btnNuevo, new org.netbeans.lib.awtextra.AbsoluteConstraints(385, 75, 110, 35));
 
         btnEditar.setBackground(new java.awt.Color(51, 65, 85));
@@ -232,6 +230,7 @@ public class FormClientes extends javax.swing.JPanel {
         btnEditar.setText("Editar");
         btnEditar.setBorderPainted(false);
         btnEditar.setFocusPainted(false);
+        btnEditar.addActionListener(this::btnEditarActionPerformed);
         panelNorte.add(btnEditar, new org.netbeans.lib.awtextra.AbsoluteConstraints(505, 75, 100, 35));
 
         btnBuscar.setBackground(new java.awt.Color(51, 65, 85));
@@ -240,6 +239,7 @@ public class FormClientes extends javax.swing.JPanel {
         btnBuscar.setText("Buscar");
         btnBuscar.setBorderPainted(false);
         btnBuscar.setFocusPainted(false);
+        btnBuscar.addActionListener(this::btnBuscarActionPerformed);
         panelNorte.add(btnBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(275, 75, 100, 35));
 
         btnEliminar.setBackground(new java.awt.Color(239, 68, 68));
@@ -248,6 +248,7 @@ public class FormClientes extends javax.swing.JPanel {
         btnEliminar.setText("Eliminar");
         btnEliminar.setBorderPainted(false);
         btnEliminar.setFocusPainted(false);
+        btnEliminar.addActionListener(this::btnEliminarActionPerformed);
         panelNorte.add(btnEliminar, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 75, 110, 35));
 
         jPanel1.add(panelNorte, java.awt.BorderLayout.PAGE_START);
@@ -360,6 +361,7 @@ public class FormClientes extends javax.swing.JPanel {
         btnGuardar.setText("Guardar");
         btnGuardar.setBorderPainted(false);
         btnGuardar.setFocusPainted(false);
+        btnGuardar.addActionListener(this::btnGuardarActionPerformed);
         panelForm.add(btnGuardar, new org.netbeans.lib.awtextra.AbsoluteConstraints(730, 110, 150, 38));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
@@ -368,6 +370,7 @@ public class FormClientes extends javax.swing.JPanel {
         btnLimpiar.setText("Limpiar");
         btnLimpiar.setBorderPainted(false);
         btnLimpiar.setFocusPainted(false);
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 110, 150, 38));
 
         jPanel1.add(panelForm, java.awt.BorderLayout.PAGE_END);
@@ -383,6 +386,34 @@ public class FormClientes extends javax.swing.JPanel {
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void txtBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_txtBuscarActionPerformed
+
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
+        editar();
+    }//GEN-LAST:event_btnEditarActionPerformed
+
+    private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_btnBuscarActionPerformed
+
+    private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
+        eliminar();
+    }//GEN-LAST:event_btnEliminarActionPerformed
+
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        guardar();
+    }//GEN-LAST:event_btnGuardarActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
