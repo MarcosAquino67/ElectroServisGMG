@@ -8,25 +8,37 @@ import java.util.List;
 
 public class ProveedorMetodos {
 
-    /** Mensajes que devuelven guardar() y eliminar() para el formulario. */
-    public static final String GUARDADO_OK = "Guardado correctamente";
-    public static final String ELIMINADO_OK = "Eliminado";
-
     /**
-     * Valida los datos, decide si es alta o modificacion y devuelve el mensaje
-     * que el formulario debe mostrar. Si todo sale bien, el proveedor queda
-     * guardado en la base.
+     * Lee los campos del formulario, valida, decide si es alta o modificacion,
+     * guarda y muestra el mensaje. Devuelve true si guardo, asi el formulario
+     * sabe si refrescar la tabla.
      */
-    public String guardar(Proveedor p) {
-        if (p.getNombre() == null || p.getNombre().trim().isEmpty()) {
-            return "El nombre es obligatorio";
+    public boolean guardar(javax.swing.JTextField txtId, javax.swing.JTextField txtNombre,
+                           javax.swing.JTextField txtRuc, javax.swing.JTextField txtTelefono,
+                           javax.swing.JTextField txtEmail, javax.swing.JTextField txtDireccion) {
+        String nombre = txtNombre.getText().trim();
+        if (nombre.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(null, "El nombre es obligatorio");
+            return false;
         }
-        if (existeRuc(p.getRuc(), p.getIdProveedor())) {
-            return "Ya hay otro proveedor cargado con el RUC " + p.getRuc()
-                    + ".\nRevise la lista antes de guardar.";
+        Proveedor p = new Proveedor();
+        int id = txtId.getText().trim().isEmpty() ? 0 : Integer.parseInt(txtId.getText().trim());
+        p.setIdProveedor(id);
+        p.setNombre(nombre);
+        p.setRuc(txtRuc.getText().trim());
+        p.setTelefono(txtTelefono.getText().trim());
+        p.setEmail(txtEmail.getText().trim());
+        p.setDireccion(txtDireccion.getText().trim());
+
+        if (existeRuc(p.getRuc(), id)) {
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    "Ya hay otro proveedor cargado con el RUC " + p.getRuc() + ".\n"
+                    + "Revise la lista antes de guardar.");
+            return false;
         }
-        boolean ok = p.getIdProveedor() > 0 ? modificar(p) : insertar(p);
-        return ok ? GUARDADO_OK : "Error al guardar";
+        boolean ok = id > 0 ? modificar(p) : insertar(p);
+        javax.swing.JOptionPane.showMessageDialog(null, ok ? "Guardado correctamente" : "Error al guardar");
+        return ok;
     }
 
     public boolean insertar(Proveedor p) {
@@ -53,11 +65,21 @@ public class ProveedorMetodos {
         } catch (SQLException e) { System.out.println(e.getMessage()); return false; }
     }
     /**
-     * Elimina el proveedor y devuelve el mensaje que el formulario debe mostrar.
+     * Elimina el proveedor seleccionado (el id viene del campo txtId) y muestra
+     * el mensaje. Devuelve true si elimino.
      */
-    public String eliminar(int id) {
-        return eliminarFila(id) ? ELIMINADO_OK
-                : "No se puede eliminar: tiene compras o productos asociados";
+    public boolean eliminar(javax.swing.JTextField txtId) {
+        int id;
+        try {
+            id = Integer.parseInt(txtId.getText().trim());
+        } catch (NumberFormatException e) {
+            javax.swing.JOptionPane.showMessageDialog(null, "Seleccione un proveedor de la tabla");
+            return false;
+        }
+        boolean ok = eliminarFila(id);
+        javax.swing.JOptionPane.showMessageDialog(null, ok ? "Eliminado"
+                : "No se puede eliminar: tiene compras o productos asociados");
+        return ok;
     }
 
     private boolean eliminarFila(int id) {
@@ -82,6 +104,29 @@ public class ProveedorMetodos {
             }
         } catch (SQLException e) { System.out.println(e.getMessage()); }
         return lista;
+    }
+
+    /**
+     * Llena la tabla con los proveedores, opcionalmente filtrados por nombre o
+     * RUC.
+     */
+    public void mostrar(javax.swing.JTable tabla, String filtro) {
+        String f = filtro == null ? "" : filtro.toLowerCase();
+        List<Proveedor> fil = new ArrayList<>();
+        for (Proveedor p : listar()) {
+            if (f.isEmpty() || p.getNombre().toLowerCase().contains(f)
+                    || p.getRuc().toLowerCase().contains(f)) fil.add(p);
+        }
+        String[] cols = {"ID", "Nombre", "RUC", "Teléfono", "Email"};
+        Object[][] data = new Object[fil.size()][5];
+        for (int i = 0; i < fil.size(); i++) {
+            Proveedor p = fil.get(i);
+            data[i] = new Object[]{p.getIdProveedor(), p.getNombre(), p.getRuc(),
+                p.getTelefono(), p.getEmail()};
+        }
+        tabla.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        });
     }
 
     /**

@@ -34,24 +34,7 @@ public class FormProveedores extends javax.swing.JPanel {
     }
 
     private void cargarTabla(String filtro) {
-        ProveedorMetodos pm = new ProveedorMetodos();
-        java.util.List<Proveedor> lista = pm.listar();
-        String f = filtro == null ? "" : filtro.toLowerCase();
-        java.util.List<Proveedor> fil = new java.util.ArrayList<>();
-        for (Proveedor p : lista) {
-            if (f.isEmpty() || p.getNombre().toLowerCase().contains(f)
-                    || p.getRuc().toLowerCase().contains(f)) fil.add(p);
-        }
-        String[] cols = {"ID", "Nombre", "RUC", "Teléfono", "Email"};
-        Object[][] data = new Object[fil.size()][5];
-        for (int i = 0; i < fil.size(); i++) {
-            Proveedor p = fil.get(i);
-            data[i] = new Object[]{p.getIdProveedor(), p.getNombre(), p.getRuc(),
-                p.getTelefono(), p.getEmail()};
-        }
-        tblProveedores.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        });
+        new ProveedorMetodos().mostrar(tblProveedores, filtro);
         UiTheme.styleTable(tblProveedores);
     }
 
@@ -97,16 +80,8 @@ public class FormProveedores extends javax.swing.JPanel {
     }
 
     private void guardar() {
-        Proveedor p = new Proveedor();
-        p.setIdProveedor(txtId.getText().trim().isEmpty() ? 0 : Integer.parseInt(txtId.getText().trim()));
-        p.setNombre(txtNombre.getText().trim());
-        p.setRuc(txtRuc.getText().trim());
-        p.setTelefono(txtTelefono.getText().trim());
-        p.setEmail(txtEmail.getText().trim());
-        p.setDireccion(txtDireccion.getText().trim());
-        String msg = new ProveedorMetodos().guardar(p);
-        javax.swing.JOptionPane.showMessageDialog(this, msg);
-        if (ProveedorMetodos.GUARDADO_OK.equals(msg)) {
+        if (new ProveedorMetodos().guardar(txtId, txtNombre, txtRuc, txtTelefono,
+                txtEmail, txtDireccion)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -118,14 +93,11 @@ public class FormProveedores extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un proveedor de la tabla");
             return;
         }
-        int id = (int) tblProveedores.getValueAt(fila, 0);
         int conf = javax.swing.JOptionPane.showConfirmDialog(this,
                 "¿Eliminar proveedor '" + tblProveedores.getValueAt(fila, 1) + "'?",
                 "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        String msg = new ProveedorMetodos().eliminar(id);
-        javax.swing.JOptionPane.showMessageDialog(this, msg);
-        if (ProveedorMetodos.ELIMINADO_OK.equals(msg)) {
+        if (new ProveedorMetodos().eliminar(txtId)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }

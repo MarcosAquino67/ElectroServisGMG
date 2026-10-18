@@ -34,25 +34,7 @@ public class FormClientes extends javax.swing.JPanel {
     }
 
     private void cargarTabla(String filtro) {
-        ClienteMetodos cm = new ClienteMetodos();
-        java.util.List<Cliente> lista = cm.listar();
-        String f = filtro == null ? "" : filtro.toLowerCase();
-        java.util.List<Cliente> fil = new java.util.ArrayList<>();
-        for (Cliente c : lista) {
-            if (f.isEmpty() || c.getNombre().toLowerCase().contains(f)
-                    || c.getApellido().toLowerCase().contains(f)
-                    || c.getCedula().toLowerCase().contains(f)) fil.add(c);
-        }
-        String[] cols = {"ID", "Nombre", "Apellido", "Cédula", "Teléfono", "Email"};
-        Object[][] data = new Object[fil.size()][6];
-        for (int i = 0; i < fil.size(); i++) {
-            Cliente c = fil.get(i);
-            data[i] = new Object[]{c.getIdCliente(), c.getNombre(), c.getApellido(),
-                c.getCedula(), c.getTelefono(), c.getEmail()};
-        }
-        tblClientes.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        });
+        new ClienteMetodos().mostrar(tblClientes, filtro);
         UiTheme.styleTable(tblClientes);
     }
 
@@ -100,17 +82,8 @@ public class FormClientes extends javax.swing.JPanel {
     }
 
     private void guardar() {
-        Cliente c = new Cliente();
-        c.setIdCliente(txtId.getText().trim().isEmpty() ? 0 : Integer.parseInt(txtId.getText().trim()));
-        c.setNombre(txtNombre.getText().trim());
-        c.setApellido(txtApellido.getText().trim());
-        c.setCedula(txtCedula.getText().trim());
-        c.setTelefono(txtTelefono.getText().trim());
-        c.setEmail(txtEmail.getText().trim());
-        c.setDireccion(txtDireccion.getText().trim());
-        String msg = new ClienteMetodos().guardar(c);
-        javax.swing.JOptionPane.showMessageDialog(this, msg);
-        if (ClienteMetodos.GUARDADO_OK.equals(msg)) {
+        if (new ClienteMetodos().guardar(txtId, txtNombre, txtApellido, txtCedula,
+                txtTelefono, txtEmail, txtDireccion)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -122,14 +95,11 @@ public class FormClientes extends javax.swing.JPanel {
             javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un cliente de la tabla");
             return;
         }
-        int id = (int) tblClientes.getValueAt(fila, 0);
         int conf = javax.swing.JOptionPane.showConfirmDialog(this,
                 "¿Eliminar cliente '" + tblClientes.getValueAt(fila, 1) + " " + tblClientes.getValueAt(fila, 2) + "'?",
                 "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        String msg = new ClienteMetodos().eliminar(id);
-        javax.swing.JOptionPane.showMessageDialog(this, msg);
-        if (ClienteMetodos.ELIMINADO_OK.equals(msg)) {
+        if (new ClienteMetodos().eliminar(txtId)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }

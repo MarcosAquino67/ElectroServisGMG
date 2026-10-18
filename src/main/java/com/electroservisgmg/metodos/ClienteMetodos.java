@@ -8,25 +8,39 @@ import java.util.List;
 
 public class ClienteMetodos {
 
-    /** Mensajes que devuelven guardar() y eliminar() para el formulario. */
-    public static final String GUARDADO_OK = "Guardado correctamente";
-    public static final String ELIMINADO_OK = "Eliminado";
-
     /**
-     * Valida los datos, decide si es alta o modificacion y devuelve el mensaje
-     * que el formulario debe mostrar. Si todo sale bien, el cliente queda
-     * guardado en la base.
+     * Lee los campos del formulario, valida, decide si es alta o modificacion,
+     * guarda y muestra el mensaje. Devuelve true si guardo, asi el formulario
+     * sabe si refrescar la tabla.
      */
-    public String guardar(Cliente c) {
-        if (c.getNombre() == null || c.getNombre().trim().isEmpty()) {
-            return "El nombre es obligatorio";
+    public boolean guardar(javax.swing.JTextField txtId, javax.swing.JTextField txtNombre,
+                           javax.swing.JTextField txtApellido, javax.swing.JTextField txtCedula,
+                           javax.swing.JTextField txtTelefono, javax.swing.JTextField txtEmail,
+                           javax.swing.JTextField txtDireccion) {
+        String nombre = txtNombre.getText().trim();
+        if (nombre.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(null, "El nombre es obligatorio");
+            return false;
         }
-        if (existeCedula(c.getCedula(), c.getIdCliente())) {
-            return "Ya hay otro cliente cargado con la cédula " + c.getCedula()
-                    + ".\nRevise la lista antes de guardar.";
+        Cliente c = new Cliente();
+        int id = txtId.getText().trim().isEmpty() ? 0 : Integer.parseInt(txtId.getText().trim());
+        c.setIdCliente(id);
+        c.setNombre(nombre);
+        c.setApellido(txtApellido.getText().trim());
+        c.setCedula(txtCedula.getText().trim());
+        c.setTelefono(txtTelefono.getText().trim());
+        c.setEmail(txtEmail.getText().trim());
+        c.setDireccion(txtDireccion.getText().trim());
+
+        if (existeCedula(c.getCedula(), id)) {
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    "Ya hay otro cliente cargado con la cédula " + c.getCedula() + ".\n"
+                    + "Revise la lista antes de guardar.");
+            return false;
         }
-        boolean ok = c.getIdCliente() > 0 ? modificar(c) : insertar(c);
-        return ok ? GUARDADO_OK : "Error al guardar";
+        boolean ok = id > 0 ? modificar(c) : insertar(c);
+        javax.swing.JOptionPane.showMessageDialog(null, ok ? "Guardado correctamente" : "Error al guardar");
+        return ok;
     }
 
     public boolean insertar(Cliente c) {
@@ -57,11 +71,21 @@ public class ClienteMetodos {
     }
 
     /**
-     * Elimina el cliente y devuelve el mensaje que el formulario debe mostrar.
+     * Elimina el cliente seleccionado (el id viene del campo txtId) y muestra
+     * el mensaje. Devuelve true si elimino.
      */
-    public String eliminar(int id) {
-        return eliminarFila(id) ? ELIMINADO_OK
-                : "No se puede eliminar: tiene ventas u órdenes asociadas";
+    public boolean eliminar(javax.swing.JTextField txtId) {
+        int id;
+        try {
+            id = Integer.parseInt(txtId.getText().trim());
+        } catch (NumberFormatException e) {
+            javax.swing.JOptionPane.showMessageDialog(null, "Seleccione un cliente de la tabla");
+            return false;
+        }
+        boolean ok = eliminarFila(id);
+        javax.swing.JOptionPane.showMessageDialog(null, ok ? "Eliminado"
+                : "No se puede eliminar: tiene ventas u órdenes asociadas");
+        return ok;
     }
 
     private boolean eliminarFila(int id) {
@@ -89,6 +113,30 @@ public class ClienteMetodos {
             }
         } catch (SQLException e) { System.out.println(e.getMessage()); }
         return lista;
+    }
+
+    /**
+     * Llena la tabla con los clientes, opcionalmente filtrados por nombre,
+     * apellido o cedula.
+     */
+    public void mostrar(javax.swing.JTable tabla, String filtro) {
+        String f = filtro == null ? "" : filtro.toLowerCase();
+        List<Cliente> fil = new ArrayList<>();
+        for (Cliente c : listar()) {
+            if (f.isEmpty() || c.getNombre().toLowerCase().contains(f)
+                    || c.getApellido().toLowerCase().contains(f)
+                    || c.getCedula().toLowerCase().contains(f)) fil.add(c);
+        }
+        String[] cols = {"ID", "Nombre", "Apellido", "Cédula", "Teléfono", "Email"};
+        Object[][] data = new Object[fil.size()][6];
+        for (int i = 0; i < fil.size(); i++) {
+            Cliente c = fil.get(i);
+            data[i] = new Object[]{c.getIdCliente(), c.getNombre(), c.getApellido(),
+                c.getCedula(), c.getTelefono(), c.getEmail()};
+        }
+        tabla.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        });
     }
 
     /**
