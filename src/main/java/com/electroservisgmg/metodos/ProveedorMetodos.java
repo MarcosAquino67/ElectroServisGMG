@@ -7,6 +7,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProveedorMetodos {
+
+    /** Mensajes que devuelven guardar() y eliminar() para el formulario. */
+    public static final String GUARDADO_OK = "Guardado correctamente";
+    public static final String ELIMINADO_OK = "Eliminado";
+
+    /**
+     * Valida los datos, decide si es alta o modificacion y devuelve el mensaje
+     * que el formulario debe mostrar. Si todo sale bien, el proveedor queda
+     * guardado en la base.
+     */
+    public String guardar(Proveedor p) {
+        if (p.getNombre() == null || p.getNombre().trim().isEmpty()) {
+            return "El nombre es obligatorio";
+        }
+        if (existeRuc(p.getRuc(), p.getIdProveedor())) {
+            return "Ya hay otro proveedor cargado con el RUC " + p.getRuc()
+                    + ".\nRevise la lista antes de guardar.";
+        }
+        boolean ok = p.getIdProveedor() > 0 ? modificar(p) : insertar(p);
+        return ok ? GUARDADO_OK : "Error al guardar";
+    }
+
     public boolean insertar(Proveedor p) {
         String sql = "INSERT INTO proveedor(nombre, ruc, telefono, direccion, email) VALUES(?,?,?,?,?)";
         try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -30,7 +52,15 @@ public class ProveedorMetodos {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { System.out.println(e.getMessage()); return false; }
     }
-    public boolean eliminar(int id) {
+    /**
+     * Elimina el proveedor y devuelve el mensaje que el formulario debe mostrar.
+     */
+    public String eliminar(int id) {
+        return eliminarFila(id) ? ELIMINADO_OK
+                : "No se puede eliminar: tiene compras o productos asociados";
+    }
+
+    private boolean eliminarFila(int id) {
         String sql = "DELETE FROM proveedor WHERE idProveedor=?";
         try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id); return ps.executeUpdate() > 0;

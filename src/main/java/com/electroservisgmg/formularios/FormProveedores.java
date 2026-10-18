@@ -18,16 +18,11 @@ public class FormProveedores extends javax.swing.JPanel {
      */
     public FormProveedores() {
         initComponents();
-        txtBuscar.setText("");
         UiTheme.styleTable(tblProveedores);
         cargarTabla("");
-        btnBuscar.addActionListener(e -> buscar());
-        btnNuevo.addActionListener(e -> limpiar());
-        btnEditar.addActionListener(e -> editar());
-        btnEliminar.addActionListener(e -> eliminar());
-        btnGuardar.addActionListener(e -> guardar());
-        btnLimpiar.addActionListener(e -> limpiar());
-        txtBuscar.addActionListener(e -> buscar());
+        // Los botones y el campo de busqueda se conectan desde el disenador
+        // (pestana Events -> actionPerformed). Aca quedan solo los extras que
+        // el disenador no modela.
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
@@ -102,34 +97,16 @@ public class FormProveedores extends javax.swing.JPanel {
     }
 
     private void guardar() {
-        String nombre = txtNombre.getText().trim();
-        if (nombre.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "El nombre es obligatorio");
-            return;
-        }
         Proveedor p = new Proveedor();
-        p.setNombre(nombre);
+        p.setIdProveedor(txtId.getText().trim().isEmpty() ? 0 : Integer.parseInt(txtId.getText().trim()));
+        p.setNombre(txtNombre.getText().trim());
         p.setRuc(txtRuc.getText().trim());
         p.setTelefono(txtTelefono.getText().trim());
         p.setEmail(txtEmail.getText().trim());
         p.setDireccion(txtDireccion.getText().trim());
-        ProveedorMetodos pm = new ProveedorMetodos();
-        int idActual = txtId.getText().trim().isEmpty() ? -1 : Integer.parseInt(txtId.getText().trim());
-        if (pm.existeRuc(p.getRuc(), idActual)) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Ya hay otro proveedor cargado con el RUC " + p.getRuc() + ".\n"
-                    + "Revise la lista antes de guardar.");
-            return;
-        }
-        boolean ok;
-        if (txtId.getText().trim().isEmpty()) {
-            ok = pm.insertar(p);
-        } else {
-            p.setIdProveedor(idActual);
-            ok = pm.modificar(p);
-        }
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Guardado correctamente" : "Error al guardar");
-        if (ok) {
+        String msg = new ProveedorMetodos().guardar(p);
+        javax.swing.JOptionPane.showMessageDialog(this, msg);
+        if (ProveedorMetodos.GUARDADO_OK.equals(msg)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -146,10 +123,9 @@ public class FormProveedores extends javax.swing.JPanel {
                 "¿Eliminar proveedor '" + tblProveedores.getValueAt(fila, 1) + "'?",
                 "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        boolean ok = new ProveedorMetodos().eliminar(id);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Eliminado"
-                : "No se puede eliminar: tiene compras o productos asociados");
-        if (ok) {
+        String msg = new ProveedorMetodos().eliminar(id);
+        javax.swing.JOptionPane.showMessageDialog(this, msg);
+        if (ProveedorMetodos.ELIMINADO_OK.equals(msg)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -211,7 +187,7 @@ public class FormProveedores extends javax.swing.JPanel {
         txtBuscar.setBackground(new java.awt.Color(15, 23, 42));
         txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtBuscar.setForeground(new java.awt.Color(243, 244, 246));
-        txtBuscar.setText("jTextField1");
+        txtBuscar.addActionListener(this::txtBuscarActionPerformed);
         panelNorte.add(txtBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 75, 250, 35));
 
         btnBuscar.setBackground(new java.awt.Color(51, 65, 85));
@@ -220,6 +196,7 @@ public class FormProveedores extends javax.swing.JPanel {
         btnBuscar.setText("Buscar");
         btnBuscar.setBorderPainted(false);
         btnBuscar.setFocusPainted(false);
+        btnBuscar.addActionListener(this::btnBuscarActionPerformed);
         panelNorte.add(btnBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(275, 75, 100, 35));
 
         btnNuevo.setBackground(new java.awt.Color(56, 189, 248));
@@ -228,6 +205,7 @@ public class FormProveedores extends javax.swing.JPanel {
         btnNuevo.setText("+ Nuevo");
         btnNuevo.setBorderPainted(false);
         btnNuevo.setFocusPainted(false);
+        btnNuevo.addActionListener(this::btnNuevoActionPerformed);
         panelNorte.add(btnNuevo, new org.netbeans.lib.awtextra.AbsoluteConstraints(385, 75, 110, 35));
 
         btnEditar.setBackground(new java.awt.Color(51, 65, 85));
@@ -236,6 +214,7 @@ public class FormProveedores extends javax.swing.JPanel {
         btnEditar.setText("Editar");
         btnEditar.setBorderPainted(false);
         btnEditar.setFocusPainted(false);
+        btnEditar.addActionListener(this::btnEditarActionPerformed);
         panelNorte.add(btnEditar, new org.netbeans.lib.awtextra.AbsoluteConstraints(505, 75, 100, 35));
 
         btnEliminar.setBackground(new java.awt.Color(239, 68, 68));
@@ -244,6 +223,7 @@ public class FormProveedores extends javax.swing.JPanel {
         btnEliminar.setText("Eliminar");
         btnEliminar.setBorderPainted(false);
         btnEliminar.setFocusPainted(false);
+        btnEliminar.addActionListener(this::btnEliminarActionPerformed);
         panelNorte.add(btnEliminar, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 75, 110, 35));
 
         jPanel1.add(panelNorte, java.awt.BorderLayout.NORTH);
@@ -344,6 +324,7 @@ public class FormProveedores extends javax.swing.JPanel {
         btnGuardar.setText("Guardar");
         btnGuardar.setBorderPainted(false);
         btnGuardar.setFocusPainted(false);
+        btnGuardar.addActionListener(this::btnGuardarActionPerformed);
         panelForm.add(btnGuardar, new org.netbeans.lib.awtextra.AbsoluteConstraints(730, 110, 150, 38));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
@@ -352,6 +333,7 @@ public class FormProveedores extends javax.swing.JPanel {
         btnLimpiar.setText("Limpiar");
         btnLimpiar.setBorderPainted(false);
         btnLimpiar.setFocusPainted(false);
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 110, 180, 35));
 
         jPanel1.add(panelForm, java.awt.BorderLayout.PAGE_END);
@@ -367,6 +349,34 @@ public class FormProveedores extends javax.swing.JPanel {
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 520, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void txtBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_txtBuscarActionPerformed
+
+    private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_btnBuscarActionPerformed
+
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
+        editar();
+    }//GEN-LAST:event_btnEditarActionPerformed
+
+    private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
+        eliminar();
+    }//GEN-LAST:event_btnEliminarActionPerformed
+
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        guardar();
+    }//GEN-LAST:event_btnGuardarActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
