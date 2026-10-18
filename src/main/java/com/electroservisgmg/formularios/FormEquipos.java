@@ -238,6 +238,7 @@ public class FormEquipos extends javax.swing.JPanel {
 
         btnNuevo.setBackground(new java.awt.Color(56, 189, 248));
         btnNuevo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnNuevo.setForeground(new java.awt.Color(51, 51, 51));
         btnNuevo.setText("+ Nuevo");
         btnNuevo.setBorderPainted(false);
         btnNuevo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -390,7 +391,7 @@ public class FormEquipos extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1020, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1049, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)

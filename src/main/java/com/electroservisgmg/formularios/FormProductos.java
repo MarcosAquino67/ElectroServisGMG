@@ -588,7 +588,7 @@ public class FormProductos extends javax.swing.JPanel {
         lblPreview.setForeground(new java.awt.Color(156, 163, 175));
         lblPreview.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblPreview.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
-        panelForm.add(lblPreview, new org.netbeans.lib.awtextra.AbsoluteConstraints(895, 25, 130, 145));
+        panelForm.add(lblPreview, new org.netbeans.lib.awtextra.AbsoluteConstraints(900, 40, 160, 170));
 
         btnFoto.setBackground(new java.awt.Color(51, 65, 85));
         btnFoto.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
@@ -621,7 +621,7 @@ public class FormProductos extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1069, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1086, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)

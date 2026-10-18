@@ -444,20 +444,20 @@ public class FormVentas extends javax.swing.JPanel {
         tblVentas = new javax.swing.JTable();
         panelForm = new javax.swing.JPanel();
         lblCliente = new javax.swing.JLabel();
-        lblFecha = new javax.swing.JLabel();
-        lblPago = new javax.swing.JLabel();
         cboCliente = new javax.swing.JComboBox<>();
+        lblFecha = new javax.swing.JLabel();
+        txtFecha = new javax.swing.JTextField();
+        lblPago = new javax.swing.JLabel();
         cboPago = new javax.swing.JComboBox<>();
         lblCondicion = new javax.swing.JLabel();
         cboCondicion = new javax.swing.JComboBox<>();
-        txtFecha = new javax.swing.JTextField();
         lblFoto = new javax.swing.JLabel();
         lblPreview = new javax.swing.JLabel();
         lblProducto = new javax.swing.JLabel();
         cboProducto = new javax.swing.JComboBox<>();
         lblCantidad = new javax.swing.JLabel();
-        lblPrecioUnit = new javax.swing.JLabel();
         txtCantidad = new javax.swing.JTextField();
+        lblPrecioUnit = new javax.swing.JLabel();
         txtPrecioUnit = new javax.swing.JTextField();
         btnAgregar = new javax.swing.JButton();
         btnQuitar = new javax.swing.JButton();
@@ -508,7 +508,7 @@ public class FormVentas extends javax.swing.JPanel {
         btnNuevo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnNuevo.setFocusPainted(false);
         btnNuevo.addActionListener(this::btnNuevoActionPerformed);
-        panelNorte.add(btnNuevo, new org.netbeans.lib.awtextra.AbsoluteConstraints(385, 75, 110, 35));
+        panelNorte.add(btnNuevo, new org.netbeans.lib.awtextra.AbsoluteConstraints(390, 75, 110, 35));
 
         btnTicket.setBackground(new java.awt.Color(51, 65, 85));
         btnTicket.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
@@ -530,7 +530,7 @@ public class FormVentas extends javax.swing.JPanel {
         btnFactura.addActionListener(this::btnFacturaActionPerformed);
         panelNorte.add(btnFactura, new org.netbeans.lib.awtextra.AbsoluteConstraints(675, 75, 180, 35));
 
-        jPanel1.add(panelNorte, java.awt.BorderLayout.NORTH);
+        jPanel1.add(panelNorte, java.awt.BorderLayout.PAGE_START);
 
         panelTabla.setBackground(new java.awt.Color(18, 24, 36));
         panelTabla.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 15, 10, 15));
@@ -553,6 +553,7 @@ public class FormVentas extends javax.swing.JPanel {
         tblVentas.setGridColor(new java.awt.Color(51, 65, 85));
         tblVentas.setRowHeight(32);
         tblVentas.setSelectionBackground(new java.awt.Color(2, 132, 199));
+        tblVentas.setShowGrid(false);
         jScrollPane1.setViewportView(tblVentas);
 
         panelTabla.add(jScrollPane1, java.awt.BorderLayout.CENTER);
@@ -568,18 +569,23 @@ public class FormVentas extends javax.swing.JPanel {
         lblCliente.setText("Cliente");
         panelForm.add(lblCliente, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 15, 300, 25));
 
-        lblFecha.setForeground(new java.awt.Color(156, 163, 175));
-        lblFecha.setText("Fecha");
-        panelForm.add(lblFecha, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 15, 140, 25));
-
-        lblPago.setForeground(new java.awt.Color(156, 163, 175));
-        lblPago.setText("Forma de pago");
-        panelForm.add(lblPago, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 15, 150, 25));
-
         cboCliente.setBackground(new java.awt.Color(15, 23, 42));
         cboCliente.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         cboCliente.setForeground(new java.awt.Color(243, 244, 246));
         panelForm.add(cboCliente, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 40, 300, 35));
+
+        lblFecha.setForeground(new java.awt.Color(156, 163, 175));
+        lblFecha.setText("Fecha");
+        panelForm.add(lblFecha, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 15, 140, 25));
+
+        txtFecha.setBackground(new java.awt.Color(15, 23, 42));
+        txtFecha.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtFecha.setForeground(new java.awt.Color(243, 244, 246));
+        panelForm.add(txtFecha, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 40, 140, 35));
+
+        lblPago.setForeground(new java.awt.Color(156, 163, 175));
+        lblPago.setText("Forma de pago");
+        panelForm.add(lblPago, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 15, 150, 25));
 
         cboPago.setBackground(new java.awt.Color(15, 23, 42));
         cboPago.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
@@ -597,20 +603,15 @@ public class FormVentas extends javax.swing.JPanel {
         cboCondicion.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Contado", "Crédito" }));
         panelForm.add(cboCondicion, new org.netbeans.lib.awtextra.AbsoluteConstraints(665, 40, 150, 35));
 
-        txtFecha.setBackground(new java.awt.Color(15, 23, 42));
-        txtFecha.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
-        txtFecha.setForeground(new java.awt.Color(243, 244, 246));
-        panelForm.add(txtFecha, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 40, 140, 35));
-
         lblFoto.setForeground(new java.awt.Color(156, 163, 175));
         lblFoto.setText("Foto del producto");
         panelForm.add(lblFoto, new org.netbeans.lib.awtextra.AbsoluteConstraints(865, 15, 150, 20));
 
         lblPreview.setBackground(new java.awt.Color(15, 23, 42));
+        lblPreview.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
         lblPreview.setForeground(new java.awt.Color(156, 163, 175));
         lblPreview.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblPreview.setText("Sin foto");
-        lblPreview.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(51, 65, 85)));
         lblPreview.setOpaque(true);
         panelForm.add(lblPreview, new org.netbeans.lib.awtextra.AbsoluteConstraints(865, 40, 150, 110));
 
@@ -628,14 +629,14 @@ public class FormVentas extends javax.swing.JPanel {
         lblCantidad.setText("Cantidad");
         panelForm.add(lblCantidad, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 90, 90, 25));
 
-        lblPrecioUnit.setForeground(new java.awt.Color(156, 163, 175));
-        lblPrecioUnit.setText("Precio Unit.");
-        panelForm.add(lblPrecioUnit, new org.netbeans.lib.awtextra.AbsoluteConstraints(445, 90, 140, 25));
-
         txtCantidad.setBackground(new java.awt.Color(15, 23, 42));
         txtCantidad.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtCantidad.setForeground(new java.awt.Color(243, 244, 246));
         panelForm.add(txtCantidad, new org.netbeans.lib.awtextra.AbsoluteConstraints(340, 115, 90, 35));
+
+        lblPrecioUnit.setForeground(new java.awt.Color(156, 163, 175));
+        lblPrecioUnit.setText("Precio Unit.");
+        panelForm.add(lblPrecioUnit, new org.netbeans.lib.awtextra.AbsoluteConstraints(445, 90, 140, 25));
 
         txtPrecioUnit.setBackground(new java.awt.Color(15, 23, 42));
         txtPrecioUnit.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
@@ -675,6 +676,7 @@ public class FormVentas extends javax.swing.JPanel {
         tblDetalle.setGridColor(new java.awt.Color(51, 65, 85));
         tblDetalle.setRowHeight(28);
         tblDetalle.setSelectionBackground(new java.awt.Color(2, 132, 199));
+        tblDetalle.setShowGrid(false);
         scrollDetalle.setViewportView(tblDetalle);
 
         panelForm.add(scrollDetalle, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 165, 600, 90));
@@ -697,17 +699,17 @@ public class FormVentas extends javax.swing.JPanel {
         btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(865, 215, 130, 40));
 
-        jPanel1.add(panelForm, java.awt.BorderLayout.SOUTH);
+        jPanel1.add(panelForm, java.awt.BorderLayout.PAGE_END);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1035, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 644, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
 
