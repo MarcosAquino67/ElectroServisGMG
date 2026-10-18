@@ -100,35 +100,17 @@ public class FormClientes extends javax.swing.JPanel {
     }
 
     private void guardar() {
-        String nombre = txtNombre.getText().trim();
-        if (nombre.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "El nombre es obligatorio");
-            return;
-        }
         Cliente c = new Cliente();
-        c.setNombre(nombre);
+        c.setIdCliente(txtId.getText().trim().isEmpty() ? 0 : Integer.parseInt(txtId.getText().trim()));
+        c.setNombre(txtNombre.getText().trim());
         c.setApellido(txtApellido.getText().trim());
         c.setCedula(txtCedula.getText().trim());
         c.setTelefono(txtTelefono.getText().trim());
         c.setEmail(txtEmail.getText().trim());
         c.setDireccion(txtDireccion.getText().trim());
-        ClienteMetodos cm = new ClienteMetodos();
-        int idActual = txtId.getText().trim().isEmpty() ? -1 : Integer.parseInt(txtId.getText().trim());
-        if (cm.existeCedula(c.getCedula(), idActual)) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Ya hay otro cliente cargado con la cédula " + c.getCedula() + ".\n"
-                    + "Revise la lista antes de guardar.");
-            return;
-        }
-        boolean ok;
-        if (txtId.getText().trim().isEmpty()) {
-            ok = cm.insertar(c);
-        } else {
-            c.setIdCliente(idActual);
-            ok = cm.modificar(c);
-        }
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Guardado correctamente" : "Error al guardar");
-        if (ok) {
+        String msg = new ClienteMetodos().guardar(c);
+        javax.swing.JOptionPane.showMessageDialog(this, msg);
+        if (ClienteMetodos.GUARDADO_OK.equals(msg)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }
@@ -145,10 +127,9 @@ public class FormClientes extends javax.swing.JPanel {
                 "¿Eliminar cliente '" + tblClientes.getValueAt(fila, 1) + " " + tblClientes.getValueAt(fila, 2) + "'?",
                 "Confirmar", javax.swing.JOptionPane.YES_NO_OPTION);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-        boolean ok = new ClienteMetodos().eliminar(id);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Eliminado"
-                : "No se puede eliminar: tiene ventas u órdenes asociadas");
-        if (ok) {
+        String msg = new ClienteMetodos().eliminar(id);
+        javax.swing.JOptionPane.showMessageDialog(this, msg);
+        if (ClienteMetodos.ELIMINADO_OK.equals(msg)) {
             cargarTabla(txtBuscar.getText().trim());
             limpiar();
         }

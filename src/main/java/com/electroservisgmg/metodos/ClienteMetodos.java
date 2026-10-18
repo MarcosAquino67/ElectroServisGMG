@@ -8,6 +8,27 @@ import java.util.List;
 
 public class ClienteMetodos {
 
+    /** Mensajes que devuelven guardar() y eliminar() para el formulario. */
+    public static final String GUARDADO_OK = "Guardado correctamente";
+    public static final String ELIMINADO_OK = "Eliminado";
+
+    /**
+     * Valida los datos, decide si es alta o modificacion y devuelve el mensaje
+     * que el formulario debe mostrar. Si todo sale bien, el cliente queda
+     * guardado en la base.
+     */
+    public String guardar(Cliente c) {
+        if (c.getNombre() == null || c.getNombre().trim().isEmpty()) {
+            return "El nombre es obligatorio";
+        }
+        if (existeCedula(c.getCedula(), c.getIdCliente())) {
+            return "Ya hay otro cliente cargado con la cédula " + c.getCedula()
+                    + ".\nRevise la lista antes de guardar.";
+        }
+        boolean ok = c.getIdCliente() > 0 ? modificar(c) : insertar(c);
+        return ok ? GUARDADO_OK : "Error al guardar";
+    }
+
     public boolean insertar(Cliente c) {
         String sql = "INSERT INTO cliente(nombre, apellido, cedula, telefono, direccion, email) VALUES(?,?,?,?,?,?)";
         try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -35,7 +56,15 @@ public class ClienteMetodos {
         } catch (SQLException e) { System.out.println(e.getMessage()); return false; }
     }
 
-    public boolean eliminar(int id) {
+    /**
+     * Elimina el cliente y devuelve el mensaje que el formulario debe mostrar.
+     */
+    public String eliminar(int id) {
+        return eliminarFila(id) ? ELIMINADO_OK
+                : "No se puede eliminar: tiene ventas u órdenes asociadas";
+    }
+
+    private boolean eliminarFila(int id) {
         String sql = "DELETE FROM cliente WHERE idCliente=?";
         try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
