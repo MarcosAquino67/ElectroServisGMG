@@ -1,17 +1,11 @@
 package com.electroservisgmg.formularios;
 
-import com.electroservisgmg.clases.OrdenRepuesto;
-import com.electroservisgmg.clases.Producto;
 import com.electroservisgmg.metodos.OrdenRepuestoMetodos;
-import com.electroservisgmg.metodos.ProductoMetodos;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Window;
 import java.awt.event.KeyEvent;
-import java.util.List;
 import javax.swing.JComponent;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
@@ -26,11 +20,6 @@ import javax.swing.SwingUtilities;
  */
 public class FormRepuestosOrden extends javax.swing.JDialog {
 
-    // ---- colores que se usan al mostrar el estado del proceso (fuera del GEN) ----
-    private static final Color GRIS = new Color(156, 163, 175);
-    private static final Color VERDE = new Color(34, 197, 94);
-    private static final Color ROJO = new Color(239, 68, 68);
-
     private final OrdenRepuestoMetodos metodos = new OrdenRepuestoMetodos();
 
     /** Orden que se esta mirando. Lo carga el constructor propio. */
@@ -38,9 +27,6 @@ public class FormRepuestosOrden extends javax.swing.JDialog {
 
     /** Se ejecuta cada vez que cambian los repuestos (puede ser null). */
     private Runnable alCambiar;
-
-    /** Productos que se pueden usar como repuesto. */
-    private List<Producto> productos;
 
     /**
      * Creates new form FormRepuestosOrden
@@ -54,13 +40,9 @@ public class FormRepuestosOrden extends javax.swing.JDialog {
         tabla.setShowVerticalLines(false);
         txtCantidad.setCaretColor(new Color(243, 244, 246));
 
-        // ---- eventos ----
-        btnAgregar.addActionListener(e -> agregar());
-        txtCantidad.addActionListener(e -> agregar());
-        btnQuitar.addActionListener(e -> quitar());
-        btnNuevo.addActionListener(e -> nuevoProducto());
-        btnCerrar.addActionListener(e -> dispose());
-
+        // ---- eventos: los botones y el campo de cantidad se conectan desde el
+        // disenador (pestana Events -> actionPerformed). Aca queda solo el ESC,
+        // que el disenador no modela.
         getRootPane().registerKeyboardAction(e -> dispose(),
                 KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
@@ -98,132 +80,32 @@ public class FormRepuestosOrden extends javax.swing.JDialog {
 
     /** Carga los productos que se pueden usar como repuesto. */
     private void cargarProductos() {
-        productos = new ProductoMetodos().listar();
-        cboProducto.removeAllItems();
-        for (Producto p : productos) {
-            cboProducto.addItem(p.getNombre() + "   (stock " + p.getStock() + ")");
-        }
-        if (productos.isEmpty()) cboProducto.addItem("(no hay productos cargados)");
+        metodos.cargarProductos(cboProducto);
     }
 
     /** Vuelve a dibujar la tabla y el total. */
     private void refrescar() {
-        List<OrdenRepuesto> lista = metodos.listar(idOrden);
-        java.text.DecimalFormat miles = new java.text.DecimalFormat("#,##0");
-        String[] cols = {"Producto", "Cantidad", "Precio", "Subtotal"};
-        Object[][] data = new Object[lista.size()][4];
-        double total = 0;
-        for (int i = 0; i < lista.size(); i++) {
-            OrdenRepuesto r = lista.get(i);
-            total += r.getSubtotal();
-            data[i] = new Object[]{r.getNombreProducto(), r.getCantidad(),
-                "Gs. " + miles.format(r.getPrecioUnitario()), "Gs. " + miles.format(r.getSubtotal())};
-        }
-        tabla.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        });
-        tabla.getColumnModel().getColumn(0).setPreferredWidth(300);
-        tabla.getColumnModel().getColumn(1).setPreferredWidth(70);
-        tabla.getColumnModel().getColumn(2).setPreferredWidth(120);
-        tabla.getColumnModel().getColumn(3).setPreferredWidth(120);
-        lblTotal.setText(lista.isEmpty() ? "Sin repuestos cargados"
-                : "Total de repuestos:  Gs. " + miles.format(Math.round(total)));
+        metodos.mostrar(tabla, lblTotal, idOrden);
     }
 
     // ==================== acciones ====================
 
     private void agregar() {
-        int i = cboProducto.getSelectedIndex();
-        if (productos == null || productos.isEmpty() || i < 0) {
-            estado("Primero cargá productos en el inventario", ROJO);
-            return;
+        if (metodos.agregar(cboProducto, txtCantidad, tabla, lblTotal, lblEstado, idOrden)
+                && alCambiar != null) {
+            alCambiar.run();
         }
-        int cantidad;
-        try {
-            cantidad = Integer.parseInt(txtCantidad.getText().trim());
-            if (cantidad <= 0) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            estado("La cantidad tiene que ser un número mayor a cero", ROJO);
-            return;
-        }
-        Producto p = productos.get(i);
-        if (!metodos.agregar(idOrden, p.getIdProducto(), cantidad)) {
-            estado(OrdenRepuestoMetodos.ultimoError, ROJO);
-            JOptionPane.showMessageDialog(this, OrdenRepuestoMetodos.ultimoError);
-            return;
-        }
-        estado("Se agregó " + cantidad + " x " + p.getNombre() + " y se descontó del stock.", VERDE);
-        txtCantidad.setText("1");
-        if (alCambiar != null) alCambiar.run();
-        refrescar();
-        cargarProductos();
     }
 
     private void quitar() {
-        int fila = tabla.getSelectedRow();
-        if (fila < 0) {
-            estado("Elegí en la lista el repuesto que querés quitar", ROJO);
-            return;
+        if (metodos.quitar(cboProducto, tabla, lblTotal, lblEstado, idOrden) && alCambiar != null) {
+            alCambiar.run();
         }
-        List<OrdenRepuesto> lista = metodos.listar(idOrden);
-        if (fila >= lista.size()) return;
-        int id = lista.get(fila).getIdRepuesto();
-        if (!metodos.quitar(id)) {
-            estado(OrdenRepuestoMetodos.ultimoError, ROJO);
-            return;
-        }
-        estado("Repuesto quitado: volvió al stock y se descontó del costo de la orden.", VERDE);
-        if (alCambiar != null) alCambiar.run();
-        refrescar();
-        cargarProductos();
     }
 
     /** Carga un producto nuevo en el inventario y lo usa como repuesto acá. */
     private void nuevoProducto() {
-        JTextField nombre = new JTextField();
-        JTextField precio = new JTextField();
-        JTextField cantidad = new JTextField("1");
-        Object[] mensaje = {
-            "Nombre del repuesto:", nombre,
-            "Precio de venta (Gs.):", precio,
-            "Cantidad que entra al stock:", cantidad,
-            "", "Se carga como producto nuevo en el inventario."
-        };
-        int ok = JOptionPane.showConfirmDialog(this, mensaje, "Nuevo repuesto",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (ok != JOptionPane.OK_OPTION) return;
-        if (nombre.getText().trim().isEmpty()) {
-            estado("El nombre del repuesto no puede quedar vacío", ROJO);
-            return;
-        }
-        double pv;
-        int cantStock;
-        try {
-            pv = UiTheme.parseGs(precio.getText().trim());
-            cantStock = Integer.parseInt(cantidad.getText().trim());
-            if (pv < 0 || cantStock < 0) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            estado("Precio y cantidad tienen que ser números válidos", ROJO);
-            return;
-        }
-        Producto nuevo = new Producto();
-        nuevo.setNombre(nombre.getText().trim());
-        nuevo.setPrecioVenta(pv);
-        nuevo.setPrecioCompra(Math.round(pv * 0.7));
-        nuevo.setStock(cantStock);
-        nuevo.setIva(10);
-        if (!new ProductoMetodos().insertar(nuevo)) {
-            estado("No se pudo cargar el producto: " + ProductoMetodos.ultimoError, ROJO);
-            return;
-        }
-        cargarProductos();
-        cboProducto.setSelectedIndex(Math.max(0, productos.size() - 1));
-        estado("Producto cargado. Ahora poné la cantidad y apretá Agregar.", VERDE);
-    }
-
-    private void estado(String texto, Color color) {
-        lblEstado.setText("<html>" + texto.replace("\n", "<br>") + "</html>");
-        lblEstado.setForeground(color);
+        metodos.nuevoProducto(cboProducto, lblEstado);
     }
 
     /**
@@ -321,6 +203,7 @@ public class FormRepuestosOrden extends javax.swing.JDialog {
         txtCantidad.setForeground(new java.awt.Color(243, 244, 246));
         txtCantidad.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txtCantidad.setText("1");
+        txtCantidad.addActionListener(this::txtCantidadActionPerformed);
         panelContenido.add(txtCantidad, new org.netbeans.lib.awtextra.AbsoluteConstraints(470, 376, 100, 34));
 
         btnAgregar.setBackground(new java.awt.Color(34, 197, 94));
@@ -330,6 +213,7 @@ public class FormRepuestosOrden extends javax.swing.JDialog {
         btnAgregar.setBorderPainted(false);
         btnAgregar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnAgregar.setFocusPainted(false);
+        btnAgregar.addActionListener(this::btnAgregarActionPerformed);
         panelContenido.add(btnAgregar, new org.netbeans.lib.awtextra.AbsoluteConstraints(580, 376, 100, 34));
 
         btnQuitar.setBackground(new java.awt.Color(239, 68, 68));
@@ -339,6 +223,7 @@ public class FormRepuestosOrden extends javax.swing.JDialog {
         btnQuitar.setBorderPainted(false);
         btnQuitar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnQuitar.setFocusPainted(false);
+        btnQuitar.addActionListener(this::btnQuitarActionPerformed);
         panelContenido.add(btnQuitar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 426, 220, 38));
 
         btnNuevo.setBackground(new java.awt.Color(51, 65, 85));
@@ -348,6 +233,7 @@ public class FormRepuestosOrden extends javax.swing.JDialog {
         btnNuevo.setBorderPainted(false);
         btnNuevo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnNuevo.setFocusPainted(false);
+        btnNuevo.addActionListener(this::btnNuevoActionPerformed);
         panelContenido.add(btnNuevo, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 426, 250, 38));
 
         btnCerrar.setBackground(new java.awt.Color(51, 65, 85));
@@ -357,6 +243,7 @@ public class FormRepuestosOrden extends javax.swing.JDialog {
         btnCerrar.setBorderPainted(false);
         btnCerrar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnCerrar.setFocusPainted(false);
+        btnCerrar.addActionListener(this::btnCerrarActionPerformed);
         panelContenido.add(btnCerrar, new org.netbeans.lib.awtextra.AbsoluteConstraints(580, 426, 100, 38));
 
         lblEstado.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
@@ -377,6 +264,26 @@ public class FormRepuestosOrden extends javax.swing.JDialog {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void txtCantidadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtCantidadActionPerformed
+        agregar();
+    }//GEN-LAST:event_txtCantidadActionPerformed
+
+    private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
+        agregar();
+    }//GEN-LAST:event_btnAgregarActionPerformed
+
+    private void btnQuitarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnQuitarActionPerformed
+        quitar();
+    }//GEN-LAST:event_btnQuitarActionPerformed
+
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
+        nuevoProducto();
+    }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void btnCerrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCerrarActionPerformed
+        dispose();
+    }//GEN-LAST:event_btnCerrarActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAgregar;
