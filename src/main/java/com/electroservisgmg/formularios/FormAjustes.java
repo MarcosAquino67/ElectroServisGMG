@@ -5,7 +5,6 @@
 package com.electroservisgmg.formularios;
 
 import com.electroservisgmg.clases.Empresa;
-import com.electroservisgmg.metodos.CdcUtil;
 import com.electroservisgmg.metodos.EmpresaMetodos;
 
 /**
@@ -27,13 +26,9 @@ public class FormAjustes extends javax.swing.JPanel {
         else if (defecto.equals("claro")) rbClaro.setSelected(true);
         else rbUltimo.setSelected(true);
         actualizarLabelTema();
-        btnOscuro.addActionListener(e -> { UiTheme.aplicarTema(true); actualizarLabelTema(); });
-        btnClaro.addActionListener(e -> { UiTheme.aplicarTema(false); actualizarLabelTema(); });
-        btnRespaldo.addActionListener(e -> FormRespaldo.mostrar(this));
+        // Los botones se conectan desde el disenador (pestana Events ->
+        // actionPerformed); aca queda solo lo que el diseno no modela.
         btnRespaldo.setToolTipText("Guarda una copia de toda la base en un archivo .sql, o vuelve a cargar un respaldo anterior");
-        btnElegirLogo.addActionListener(e -> elegirLogo());
-        btnQuitarLogo.addActionListener(e -> { logoEmpresa = null; actualizarPreviewLogo(); });
-        btnGuardarEmpresa.addActionListener(e -> guardarEmpresa());
         // El cursor de texto y el editor del calendario no son propiedades del diseno.
         for (javax.swing.JTextField f : new javax.swing.JTextField[]{
             txtEmpRazonSocial, txtEmpNombreComercial, txtEmpRuc, txtEmpDv, txtEmpTimbrado,
@@ -118,39 +113,10 @@ public class FormAjustes extends javax.swing.JPanel {
 
     /** Guarda los datos del emisor (se usan al emitir la factura). */
     private void guardarEmpresa() {
-        String razon = txtEmpRazonSocial.getText().trim();
-        String ruc = txtEmpRuc.getText().trim();
-        if (razon.isEmpty() || ruc.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "La razón social y el RUC son obligatorios para emitir facturas");
-            return;
-        }
-        Empresa e = new Empresa();
-        e.setRazonSocial(razon);
-        e.setNombreComercial(txtEmpNombreComercial.getText().trim());
-        e.setRuc(ruc);
-        String dv = txtEmpDv.getText().trim();
-        if (dv.isEmpty()) {
-            dv = String.valueOf(CdcUtil.dvRuc(ruc));
-            txtEmpDv.setText(dv);
-        }
-        e.setDvRuc(dv);
-        e.setTimbrado(txtEmpTimbrado.getText().trim());
-        e.setTimbradoVigenciaDesde(dcEmpVigencia.getDate());
-        e.setTipoContribuyente(cboEmpContribuyente.getSelectedIndex() == 1 ? "1" : "2");
-        e.setDireccion(txtEmpDireccion.getText().trim());
-        e.setCiudad(txtEmpCiudad.getText().trim());
-        e.setTelefono(txtEmpTelefono.getText().trim());
-        e.setEmail(txtEmpEmail.getText().trim());
-        e.setEstablecimiento(txtEmpEstablecimiento.getText().trim().isEmpty() ? "001" : txtEmpEstablecimiento.getText().trim());
-        e.setPuntoExpedicion(txtEmpPunto.getText().trim().isEmpty() ? "001" : txtEmpPunto.getText().trim());
-        try { e.setNroFacturaInicio(Integer.parseInt(txtEmpNroInicio.getText().trim())); } catch (NumberFormatException ex) { e.setNroFacturaInicio(1); }
-        try { e.setNroFacturaFin(Integer.parseInt(txtEmpNroFin.getText().trim())); } catch (NumberFormatException ex) { e.setNroFacturaFin(9999999); }
-        e.setActividades(txtEmpActividades.getText());
-        e.setLogo(logoEmpresa);
-        boolean ok = new EmpresaMetodos().guardar(e);
-        javax.swing.JOptionPane.showMessageDialog(this, ok ? "Datos de la empresa guardados"
-                : "No se pudieron guardar:\n" + EmpresaMetodos.ultimoError);
+        new EmpresaMetodos().guardarDesdeFormulario(txtEmpRazonSocial, txtEmpNombreComercial, txtEmpRuc, txtEmpDv,
+                txtEmpTimbrado, dcEmpVigencia, cboEmpContribuyente, txtEmpDireccion, txtEmpCiudad, txtEmpTelefono,
+                txtEmpEmail, txtEmpEstablecimiento, txtEmpPunto, txtEmpNroInicio, txtEmpNroFin, txtEmpActividades,
+                logoEmpresa);
     }
 
     private void actualizarLabelTema() {
@@ -271,6 +237,7 @@ public class FormAjustes extends javax.swing.JPanel {
         btnOscuro.setText("Oscuro");
         btnOscuro.setBorderPainted(false);
         btnOscuro.setFocusPainted(false);
+        btnOscuro.addActionListener(this::btnOscuroActionPerformed);
         panelCardTema.add(btnOscuro, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 55, 225, 45));
 
         btnClaro.setBackground(new java.awt.Color(248, 249, 250));
@@ -279,6 +246,7 @@ public class FormAjustes extends javax.swing.JPanel {
         btnClaro.setText("Claro");
         btnClaro.setBorderPainted(false);
         btnClaro.setFocusPainted(false);
+        btnClaro.addActionListener(this::btnClaroActionPerformed);
         panelCardTema.add(btnClaro, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 55, 225, 45));
 
         lblTemaActual.setForeground(new java.awt.Color(156, 163, 175));
@@ -338,6 +306,7 @@ public class FormAjustes extends javax.swing.JPanel {
         btnRespaldo.setBorderPainted(false);
         btnRespaldo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnRespaldo.setFocusPainted(false);
+        btnRespaldo.addActionListener(this::btnRespaldoActionPerformed);
         panelCardDefecto.add(btnRespaldo, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 165, 300, 38));
 
         panelContenido.add(panelCardDefecto, new org.netbeans.lib.awtextra.AbsoluteConstraints(530, 0, 515, 230));
@@ -517,6 +486,7 @@ public class FormAjustes extends javax.swing.JPanel {
         btnElegirLogo.setText("Elegir logo…");
         btnElegirLogo.setBorderPainted(false);
         btnElegirLogo.setFocusPainted(false);
+        btnElegirLogo.addActionListener(this::btnElegirLogoActionPerformed);
         panelCardEmpresa.add(btnElegirLogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 263, 130, 28));
 
         btnQuitarLogo.setBackground(new java.awt.Color(51, 65, 85));
@@ -525,6 +495,7 @@ public class FormAjustes extends javax.swing.JPanel {
         btnQuitarLogo.setText("Logo por defecto");
         btnQuitarLogo.setBorderPainted(false);
         btnQuitarLogo.setFocusPainted(false);
+        btnQuitarLogo.addActionListener(this::btnQuitarLogoActionPerformed);
         panelCardEmpresa.add(btnQuitarLogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(615, 297, 130, 28));
 
         lblEmpLogoHint.setForeground(new java.awt.Color(156, 163, 175));
@@ -537,6 +508,7 @@ public class FormAjustes extends javax.swing.JPanel {
         btnGuardarEmpresa.setText("Guardar datos");
         btnGuardarEmpresa.setBorderPainted(false);
         btnGuardarEmpresa.setFocusPainted(false);
+        btnGuardarEmpresa.addActionListener(this::btnGuardarEmpresaActionPerformed);
         panelCardEmpresa.add(btnGuardarEmpresa, new org.netbeans.lib.awtextra.AbsoluteConstraints(875, 340, 150, 38));
 
         panelContenido.add(panelCardEmpresa, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 250, 1045, 395));
@@ -562,6 +534,33 @@ public class FormAjustes extends javax.swing.JPanel {
     private void btnGuardarDefectoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarDefectoActionPerformed
         guardarDefecto();
     }//GEN-LAST:event_btnGuardarDefectoActionPerformed
+
+    private void btnOscuroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOscuroActionPerformed
+        UiTheme.aplicarTema(true);
+        actualizarLabelTema();
+    }//GEN-LAST:event_btnOscuroActionPerformed
+
+    private void btnClaroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClaroActionPerformed
+        UiTheme.aplicarTema(false);
+        actualizarLabelTema();
+    }//GEN-LAST:event_btnClaroActionPerformed
+
+    private void btnRespaldoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRespaldoActionPerformed
+        FormRespaldo.mostrar(this);
+    }//GEN-LAST:event_btnRespaldoActionPerformed
+
+    private void btnElegirLogoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnElegirLogoActionPerformed
+        elegirLogo();
+    }//GEN-LAST:event_btnElegirLogoActionPerformed
+
+    private void btnQuitarLogoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnQuitarLogoActionPerformed
+        logoEmpresa = null;
+        actualizarPreviewLogo();
+    }//GEN-LAST:event_btnQuitarLogoActionPerformed
+
+    private void btnGuardarEmpresaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarEmpresaActionPerformed
+        guardarEmpresa();
+    }//GEN-LAST:event_btnGuardarEmpresaActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -86,6 +86,67 @@ public class EmpresaMetodos {
     }
 
     /**
+     * Lee los datos del emisor desde el formulario de Ajustes, valida, guarda y
+     * avisa. Devuelve true si guardo.
+     */
+    public boolean guardarDesdeFormulario(javax.swing.JTextField txtRazonSocial,
+            javax.swing.JTextField txtNombreComercial, javax.swing.JTextField txtRuc,
+            javax.swing.JTextField txtDv, javax.swing.JTextField txtTimbrado,
+            com.toedter.calendar.JDateChooser dcVigencia,
+            javax.swing.JComboBox<String> cboContribuyente,
+            javax.swing.JTextField txtDireccion, javax.swing.JTextField txtCiudad,
+            javax.swing.JTextField txtTelefono, javax.swing.JTextField txtEmail,
+            javax.swing.JTextField txtEstablecimiento, javax.swing.JTextField txtPunto,
+            javax.swing.JTextField txtNroInicio, javax.swing.JTextField txtNroFin,
+            javax.swing.JTextArea txtActividades, String logo) {
+        String razon = txtRazonSocial.getText().trim();
+        String ruc = txtRuc.getText().trim();
+        if (razon.isEmpty() || ruc.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    "La razón social y el RUC son obligatorios para emitir facturas");
+            return false;
+        }
+        Empresa e = new Empresa();
+        e.setRazonSocial(razon);
+        e.setNombreComercial(txtNombreComercial.getText().trim());
+        e.setRuc(ruc);
+        String dv = txtDv.getText().trim();
+        if (dv.isEmpty()) {
+            // El digito verificador se calcula solo si no lo cargaron a mano.
+            dv = String.valueOf(CdcUtil.dvRuc(ruc));
+            txtDv.setText(dv);
+        }
+        e.setDvRuc(dv);
+        e.setTimbrado(txtTimbrado.getText().trim());
+        e.setTimbradoVigenciaDesde(dcVigencia.getDate());
+        e.setTipoContribuyente(cboContribuyente.getSelectedIndex() == 1 ? "1" : "2");
+        e.setDireccion(txtDireccion.getText().trim());
+        e.setCiudad(txtCiudad.getText().trim());
+        e.setTelefono(txtTelefono.getText().trim());
+        e.setEmail(txtEmail.getText().trim());
+        String est = txtEstablecimiento.getText().trim();
+        e.setEstablecimiento(est.isEmpty() ? "001" : est);
+        String pun = txtPunto.getText().trim();
+        e.setPuntoExpedicion(pun.isEmpty() ? "001" : pun);
+        try {
+            e.setNroFacturaInicio(Integer.parseInt(txtNroInicio.getText().trim()));
+        } catch (NumberFormatException ex) {
+            e.setNroFacturaInicio(1);
+        }
+        try {
+            e.setNroFacturaFin(Integer.parseInt(txtNroFin.getText().trim()));
+        } catch (NumberFormatException ex) {
+            e.setNroFacturaFin(9999999);
+        }
+        e.setActividades(txtActividades.getText());
+        e.setLogo(logo);
+        boolean ok = guardar(e);
+        javax.swing.JOptionPane.showMessageDialog(null, ok ? "Datos de la empresa guardados"
+                : "No se pudieron guardar:\n" + ultimoError);
+        return ok;
+    }
+
+    /**
      * Bytes del logo del emisor: usa el archivo elegido en Ajustes y, si no hay,
      * el logo que viene con el sistema (iconos/logo_empresa.jpg).
      * Devuelve null si no se encontro ninguno.
