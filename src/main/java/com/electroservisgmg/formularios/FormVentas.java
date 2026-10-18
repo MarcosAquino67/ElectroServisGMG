@@ -4,20 +4,13 @@
  */
 package com.electroservisgmg.formularios;
 
-import com.electroservisgmg.clases.Caja;
 import com.electroservisgmg.clases.Cliente;
 import com.electroservisgmg.clases.DetalleVenta;
-import com.electroservisgmg.clases.Empresa;
 import com.electroservisgmg.clases.Producto;
-import com.electroservisgmg.clases.Sesion;
-import com.electroservisgmg.clases.Usuario;
 import com.electroservisgmg.clases.Venta;
-import com.electroservisgmg.metodos.CajaMetodos;
 import com.electroservisgmg.metodos.ClienteMetodos;
-import com.electroservisgmg.metodos.EmpresaMetodos;
 import com.electroservisgmg.metodos.ProductoMetodos;
 import com.electroservisgmg.metodos.VentaMetodos;
-import com.electroservisgmg.reportes.ReportesMetodos;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +38,6 @@ public class FormVentas extends javax.swing.JPanel {
      */
     public FormVentas() {
         initComponents();
-        txtBuscar.setText("");
         crearDateChooser();
         crearCampoCodigoBarras();
         crearBotonVuelto();
@@ -61,31 +53,27 @@ public class FormVentas extends javax.swing.JPanel {
         cargarTabla("");
         pintarDetalle();
         mostrarFoto(null);
-        btnBuscar.addActionListener(e -> buscar());
-        btnNuevo.addActionListener(e -> limpiar());
-        btnTicket.addActionListener(e -> imprimirTicket());
-        btnFactura.addActionListener(e -> imprimirFactura());
-        btnAgregar.addActionListener(e -> agregar());
-        btnQuitar.addActionListener(e -> quitarFila());
-        btnGuardar.addActionListener(e -> guardar());
-        btnLimpiar.addActionListener(e -> limpiar());
+        // Los botones, el buscador y el combo de productos se conectan desde el
+        // disenador (pestana Events -> actionPerformed). Aca quedan solo los
+        // extras que el disenador no modela.
         txtCodigoBarras.addActionListener(e -> agregarPorCodigo());
-        txtBuscar.addActionListener(e -> buscar());
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
             @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { buscar(); }
         });
-        cboProducto.addActionListener(e -> {
-            Producto p = productoSeleccionado();
-            mostrarFoto(p == null ? null : p.getFoto());
-            if (p != null && idVentaActual == -1) {
-                txtPrecioUnit.setText(String.valueOf((long) p.getPrecioVenta()));
-            }
-        });
         tblVentas.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) llenarDesdeFila();
         });
+    }
+
+    /** Cambia la foto y sugiere el precio al elegir otro producto. */
+    private void productoCambiado() {
+        Producto p = productoSeleccionado();
+        mostrarFoto(p == null ? null : p.getFoto());
+        if (p != null && idVentaActual == -1) {
+            txtPrecioUnit.setText(String.valueOf((long) p.getPrecioVenta()));
+        }
     }
 
     // ---- JDateChooser (fuera del GEN: reemplaza al txtFecha placeholder) ----
@@ -252,44 +240,17 @@ public class FormVentas extends javax.swing.JPanel {
             return;
         }
         int id = ((Number) tblVentas.getValueAt(fila, 0)).intValue();
-        Venta v = new VentaMetodos().buscar(id);
-        if (v == null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "No se encontró la venta #" + id);
-            return;
-        }
-        if (v.estaAnulada()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "La venta #" + id + " ya está anulada");
-            return;
-        }
-        String doc = v.esFactura()
-                ? "\nTambién queda anulada su factura electrónica N° " + v.getNroFactura() + "."
-                : "";
         int conf = javax.swing.JOptionPane.showConfirmDialog(this,
-                "¿Anular la venta #" + id + " de " + nombreCliente(v.getIdCliente())
-                + " por " + UiTheme.gs(v.getTotal()) + "?\n"
-                + "Los productos vuelven al stock." + doc,
+                "¿Anular la venta #" + id + "?\nLos productos vuelven al stock.",
                 "Confirmar anulación",
                 javax.swing.JOptionPane.YES_NO_OPTION, javax.swing.JOptionPane.WARNING_MESSAGE);
         if (conf != javax.swing.JOptionPane.YES_OPTION) return;
-
-        if (!new VentaMetodos().anular(id)) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "No se pudo anular la venta #" + id + " (¿ya estaba anulada?)");
-            return;
+        if (new VentaMetodos().anular(tblVentas)) {
+            idVentaActual = -1;
+            recargarProductos();
+            cargarTabla(txtBuscar.getText().trim());
+            limpiar();
         }
-        // la plata que habia entrado vuelve a salir de la caja, si sigue abierta
-        CajaMetodos cm = new CajaMetodos();
-        Caja caja = cm.cajaAbierta();
-        if (caja != null) {
-            cm.registrarMovimiento(caja.getIdCaja(), "EGRESO", v.getTotal(), "Anulación venta #" + id);
-        }
-        idVentaActual = -1;
-        recargarProductos();
-        cargarTabla(txtBuscar.getText().trim());
-        limpiar();
-        javax.swing.JOptionPane.showMessageDialog(this,
-                "Venta #" + id + " anulada.\nLos productos volvieron al stock."
-                + (caja == null ? "" : "\nSalida de " + UiTheme.gs(v.getTotal()) + " asentada en la caja #" + caja.getIdCaja() + "."));
     }
 
     // ---- combos ----
@@ -319,41 +280,10 @@ public class FormVentas extends javax.swing.JPanel {
                 new String[]{"Contado", "Crédito"}));
     }
 
-    private int idClienteSeleccionado() {
-        int i = cboCliente.getSelectedIndex();
-        if (i < 0 || i >= listaClientes.size()) return -1;
-        return listaClientes.get(i).getIdCliente();
-    }
-
-    private int idProductoSeleccionado() {
-        int i = cboProducto.getSelectedIndex();
-        if (i < 0 || i >= listaProductos.size()) return -1;
-        return listaProductos.get(i).getIdProducto();
-    }
-
     private Producto productoSeleccionado() {
         int i = cboProducto.getSelectedIndex();
         if (i < 0 || i >= listaProductos.size()) return null;
         return listaProductos.get(i);
-    }
-
-    private String nombreCliente(int id) {
-        for (Cliente c : listaClientes) {
-            if (c.getIdCliente() == id) return c.getNombre() + " " + (c.getApellido() == null ? "" : c.getApellido());
-        }
-        return "Cliente #" + id;
-    }
-
-    private String nombreProducto(int id) {
-        for (Producto p : listaProductos) if (p.getIdProducto() == id) return p.getNombre();
-        return "Producto #" + id;
-    }
-
-    /** Cantidad de ese producto que ya esta cargada en el detalle. */
-    private int cantidadEnDetalle(int idProducto) {
-        int t = 0;
-        for (DetalleVenta d : detalle) if (d.getIdProducto() == idProducto) t += d.getCantidad();
-        return t;
     }
 
     // ---- foto del producto ----
@@ -386,60 +316,8 @@ public class FormVentas extends javax.swing.JPanel {
 
     // ---- tabla de ventas ----
     private void cargarTabla(String filtro) {
-        List<Venta> lista = new VentaMetodos().listar();
-        Empresa emp = new EmpresaMetodos().obtener();
-        String f = filtro == null ? "" : filtro.toLowerCase();
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy");
-        List<Venta> fil = new ArrayList<>();
-        for (Venta v : lista) {
-            String cli = nombreCliente(v.getIdCliente());
-            String fecha = v.getFechaVenta() == null ? "" : sdf.format(v.getFechaVenta());
-            String pago = v.getFormaPago() == null ? "" : v.getFormaPago();
-            String doc = documentoDe(v, emp);
-            if (f.isEmpty() || String.valueOf(v.getIdVenta()).contains(f)
-                    || cli.toLowerCase().contains(f) || fecha.contains(f)
-                    || pago.toLowerCase().contains(f) || doc.toLowerCase().contains(f)
-                    || UiTheme.gs(v.getTotal()).toLowerCase().contains(f)
-                    || v.getEstado().toLowerCase().contains(f)) fil.add(v);
-        }
-        String[] cols = {"ID", "Cliente", "Fecha", "Total", "Pago", "Documento", "Estado"};
-        Object[][] data = new Object[fil.size()][7];
-        for (int i = 0; i < fil.size(); i++) {
-            Venta v = fil.get(i);
-            data[i] = new Object[]{v.getIdVenta(), nombreCliente(v.getIdCliente()),
-                v.getFechaVenta() == null ? "" : sdf.format(v.getFechaVenta()),
-                UiTheme.gs(v.getTotal()), v.getFormaPago(), documentoDe(v, emp), v.getEstado()};
-        }
-        tblVentas.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int cc) { return false; }
-        });
-        tblVentas.getColumnModel().getColumn(0).setPreferredWidth(50);
-        tblVentas.getColumnModel().getColumn(1).setPreferredWidth(230);
-        tblVentas.getColumnModel().getColumn(2).setPreferredWidth(100);
-        tblVentas.getColumnModel().getColumn(3).setPreferredWidth(120);
-        tblVentas.getColumnModel().getColumn(4).setPreferredWidth(110);
-        tblVentas.getColumnModel().getColumn(5).setPreferredWidth(160);
-        tblVentas.getColumnModel().getColumn(6).setPreferredWidth(90);
+        new VentaMetodos().mostrar(tblVentas, filtro);
         UiTheme.styleTable(tblVentas);
-        // las ventas anuladas se ven en rojo
-        tblVentas.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
-            @Override public java.awt.Component getTableCellRendererComponent(javax.swing.JTable t, Object val,
-                    boolean sel, boolean foc, int row, int col) {
-                java.awt.Component c = super.getTableCellRendererComponent(t, val, sel, foc, row, col);
-                if (!sel) {
-                    boolean anulada = Venta.ANULADA.equalsIgnoreCase(String.valueOf(t.getValueAt(row, 6)));
-                    c.setForeground(anulada ? UiTheme.DANGER : t.getForeground());
-                    c.setFont(anulada ? t.getFont().deriveFont(java.awt.Font.ITALIC) : t.getFont());
-                }
-                return c;
-            }
-        });
-    }
-
-    /** Texto de la columna Documento: ticket o factura electronica con su numero. */
-    private static String documentoDe(Venta v, Empresa emp) {
-        if (v.getCdc() == null || v.getCdc().isEmpty()) return "Ticket";
-        return "Factura " + emp.nroFacturaFormateado(v.getNroFactura());
     }
 
     private void buscar() {
@@ -448,98 +326,19 @@ public class FormVentas extends javax.swing.JPanel {
 
     // ---- detalle en memoria ----
     private void pintarDetalle() {
-        String[] cols = {"Producto", "Cant.", "P. Unit.", "IVA", "Subtotal"};
-        Object[][] data = new Object[detalle.size()][5];
-        for (int i = 0; i < detalle.size(); i++) {
-            DetalleVenta d = detalle.get(i);
-            data[i] = new Object[]{nombreProducto(d.getIdProducto()), d.getCantidad(),
-                UiTheme.gs(d.getPrecioUnitario()), textoIva(d.getIva()), UiTheme.gs(d.getSubtotal())};
-        }
-        tblDetalle.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-            @Override public boolean isCellEditable(int r, int cc) { return false; }
-        });
-        tblDetalle.getColumnModel().getColumn(0).setPreferredWidth(170);
-        tblDetalle.getColumnModel().getColumn(1).setPreferredWidth(50);
-        tblDetalle.getColumnModel().getColumn(2).setPreferredWidth(100);
-        tblDetalle.getColumnModel().getColumn(3).setPreferredWidth(60);
-        tblDetalle.getColumnModel().getColumn(4).setPreferredWidth(110);
+        new VentaMetodos().mostrarDetalle(tblDetalle, detalle, lblTotal);
         UiTheme.styleTable(tblDetalle);
-        actualizarTotal();
-    }
-
-    /** Texto de la tasa de IVA de un renglon. */
-    private static String textoIva(double iva) {
-        if (iva >= 9.99) return "10%";
-        if (iva >= 4.99) return "5%";
-        return "Exenta";
-    }
-
-    private void actualizarTotal() {
-        double t = 0;
-        for (DetalleVenta d : detalle) t += d.getSubtotal();
-        lblTotal.setText("Total: " + UiTheme.gs(t));
     }
 
     private void agregar() {
-        int idProd = idProductoSeleccionado();
-        if (idProd < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un producto");
-            return;
+        if (new VentaMetodos().agregar(cboProducto, txtCantidad, txtPrecioUnit, detalle, tblDetalle, lblTotal)) {
+            txtCantidad.setText("");
+            cboProducto.requestFocus();
         }
-        int cant;
-        double pu;
-        try {
-            cant = UiTheme.parseGsInt(txtCantidad.getText().trim());
-            if (cant < 1) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "La cantidad debe ser un número ≥ 1");
-            return;
-        }
-        try {
-            pu = UiTheme.parseGs(txtPrecioUnit.getText().trim());
-            if (pu < 0) throw new NumberFormatException();
-        } catch (NumberFormatException e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "El precio unitario debe ser un número válido (≥ 0)");
-            return;
-        }
-        Producto p = null;
-        for (Producto x : listaProductos) if (x.getIdProducto() == idProd) { p = x; break; }
-        if (p != null) {
-            int disponible = p.getStock() - cantidadEnDetalle(idProd);
-            if (cant > disponible) {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                        "Stock insuficiente de \"" + p.getNombre() + "\".\n"
-                        + "Disponible: " + Math.max(0, disponible) + " (stock total " + p.getStock() + ")");
-                return;
-            }
-        }
-        DetalleVenta dv = new DetalleVenta(0, 0, idProd, cant, pu, cant * pu);
-        dv.setIva(p == null ? 10 : p.getIva());
-        // si el producto ya esta cargado con el mismo precio, se le suma la cantidad
-        // (asi escanear dos veces el mismo articulo no duplica el renglon)
-        boolean sumado = false;
-        for (DetalleVenta d : detalle) {
-            if (d.getIdProducto() == idProd && Math.abs(d.getPrecioUnitario() - pu) < 0.01) {
-                d.setCantidad(d.getCantidad() + cant);
-                d.setSubtotal(d.getCantidad() * d.getPrecioUnitario());
-                sumado = true;
-                break;
-            }
-        }
-        if (!sumado) detalle.add(dv);
-        pintarDetalle();
-        txtCantidad.setText("");
-        cboProducto.requestFocus();
     }
 
     private void quitarFila() {
-        int fila = tblDetalle.getSelectedRow();
-        if (fila < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Seleccione una fila del detalle");
-            return;
-        }
-        detalle.remove(fila);
-        pintarDetalle();
+        new VentaMetodos().quitar(tblDetalle, detalle, lblTotal);
     }
 
     // ---- seleccionar venta de la tabla (vista) ----
@@ -576,59 +375,15 @@ public class FormVentas extends javax.swing.JPanel {
 
     // ---- acciones ----
     private void guardar() {
-        if (idVentaActual != -1) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "La venta #" + idVentaActual + " ya está registrada.\n"
-                    + "Presione '+ Nueva' para registrar otra venta.");
-            return;
-        }
-        if (dcFecha.getDate() == null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Elija la fecha de la venta");
-            return;
-        }
-        int idCli = idClienteSeleccionado();
-        if (idCli < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Seleccione un cliente");
-            return;
-        }
-        if (detalle.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Agregue al menos un producto al detalle");
-            return;
-        }
-        Venta v = new Venta();
-        v.setIdCliente(idCli);
-        Usuario u = Sesion.getUsuario();
-        v.setIdUsuario(u != null ? u.getIdUsuario() : 1);
-        v.setFechaVenta(dcFecha.getDate());
-        double total = 0;
-        for (DetalleVenta d : detalle) total += d.getSubtotal();
-        v.setTotal(total);
-        String formaPago = String.valueOf(cboPago.getSelectedItem());
-        v.setFormaPago(formaPago);
-        v.setCondicionVenta(String.valueOf(cboCondicion.getSelectedItem()));
-        boolean ok = new VentaMetodos().registrarVenta(v, detalle);
-        if (!ok) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "No se pudo registrar la venta (verifique el stock disponible)");
-            return;
-        }
-        String nota = "";
-        CajaMetodos cm = new CajaMetodos();
-        Caja caja = cm.cajaAbierta();
-        if (caja != null) {
-            cm.registrarMovimiento(caja.getIdCaja(), "INGRESO", total, "Venta #" + v.getIdVenta());
-            nota = "Ingreso asentado en la caja #" + caja.getIdCaja() + ".";
-        }
-        String titulo = "Venta #" + v.getIdVenta() + " registrada";
+        VentaMetodos vm = new VentaMetodos();
+        Venta v = vm.guardar(idVentaActual, dcFecha, cboCliente, cboPago, cboCondicion, detalle);
+        if (v == null) return;
         recargarProductos();
         cargarTabla(txtBuscar.getText().trim());
         limpiar();
-        if ("EFECTIVO".equalsIgnoreCase(formaPago)) {
-            // cobro en efectivo: se abre la ventana para calcular el vuelto
-            FormVuelto.mostrar(this, titulo, total, nota);
-        } else {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    titulo + " (stock actualizado)." + (nota.isEmpty() ? "" : "\n" + nota));
+        // en efectivo se abre la ventana del vuelto (el aviso ya lo mostro la clase)
+        if ("EFECTIVO".equalsIgnoreCase(v.getFormaPago())) {
+            FormVuelto.mostrar(this, "Venta #" + v.getIdVenta() + " registrada", v.getTotal(), vm.ultimaNota);
         }
     }
 
@@ -641,60 +396,12 @@ public class FormVentas extends javax.swing.JPanel {
 
     // ---- ticket ----
     private void imprimirTicket() {
-        int fila = tblVentas.getSelectedRow();
-        if (fila < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Seleccione una venta de la tabla para imprimir su ticket");
-            return;
-        }
-        int id = ((Number) tblVentas.getValueAt(fila, 0)).intValue();
-        Venta anulada = new VentaMetodos().buscar(id);
-        if (anulada != null && anulada.estaAnulada()) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "La venta #" + id + " está anulada: no se puede imprimir su ticket.");
-            return;
-        }
-        try {
-            java.io.File pdf = ReportesMetodos.ticketVenta(id);
-            javax.swing.JOptionPane.showMessageDialog(this, "Ticket generado:\n" + pdf.getAbsolutePath());
-            ReportesMetodos.abrir(pdf);
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "No se pudo generar el ticket:\n" + e.getMessage());
-        }
+        new VentaMetodos().imprimirTicket(tblVentas);
     }
 
     // ---- factura electronica ----
-    /**
-     * Emite (o reimprime) la Factura Electronica de la venta seleccionada.
-     * La primera vez se le asigna numero correlativo y CDC (guardado en la base).
-     */
     private void imprimirFactura() {
-        int fila = tblVentas.getSelectedRow();
-        if (fila < 0) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Seleccione una venta de la tabla para emitir su factura electrónica");
-            return;
-        }
-        int id = ((Number) tblVentas.getValueAt(fila, 0)).intValue();
-        Venta previa = new VentaMetodos().buscar(id);
-        if (previa != null && previa.estaAnulada()) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "La venta #" + id + " está anulada: no se puede emitir su factura.");
-            return;
-        }
-        try {
-            java.io.File pdf = ReportesMetodos.facturaElectronica(id);
-            Venta v = new VentaMetodos().buscar(id);
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Factura electrónica emitida.\n"
-                    + "N°: " + (v == null ? "" : v.getNroFactura()) + "\n"
-                    + "CDC: " + (v == null ? "" : v.getCdc()) + "\n\n" + pdf.getAbsolutePath());
-            cargarTabla(txtBuscar.getText().trim());
-            ReportesMetodos.abrir(pdf);
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "No se pudo emitir la factura:\n" + e.getMessage());
-        }
+        if (new VentaMetodos().imprimirFactura(tblVentas)) cargarTabla(txtBuscar.getText().trim());
     }
 
     private void limpiar() {
@@ -780,6 +487,7 @@ public class FormVentas extends javax.swing.JPanel {
         txtBuscar.setBackground(new java.awt.Color(15, 23, 42));
         txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtBuscar.setForeground(new java.awt.Color(243, 244, 246));
+        txtBuscar.addActionListener(this::txtBuscarActionPerformed);
         panelNorte.add(txtBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 75, 250, 35));
 
         btnBuscar.setBackground(new java.awt.Color(51, 65, 85));
@@ -789,6 +497,7 @@ public class FormVentas extends javax.swing.JPanel {
         btnBuscar.setBorderPainted(false);
         btnBuscar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnBuscar.setFocusPainted(false);
+        btnBuscar.addActionListener(this::btnBuscarActionPerformed);
         panelNorte.add(btnBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(275, 75, 110, 35));
 
         btnNuevo.setBackground(new java.awt.Color(56, 189, 248));
@@ -798,6 +507,7 @@ public class FormVentas extends javax.swing.JPanel {
         btnNuevo.setBorderPainted(false);
         btnNuevo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnNuevo.setFocusPainted(false);
+        btnNuevo.addActionListener(this::btnNuevoActionPerformed);
         panelNorte.add(btnNuevo, new org.netbeans.lib.awtextra.AbsoluteConstraints(385, 75, 110, 35));
 
         btnTicket.setBackground(new java.awt.Color(51, 65, 85));
@@ -807,6 +517,7 @@ public class FormVentas extends javax.swing.JPanel {
         btnTicket.setBorderPainted(false);
         btnTicket.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnTicket.setFocusPainted(false);
+        btnTicket.addActionListener(this::btnTicketActionPerformed);
         panelNorte.add(btnTicket, new org.netbeans.lib.awtextra.AbsoluteConstraints(505, 75, 160, 35));
 
         btnFactura.setBackground(new java.awt.Color(34, 197, 94));
@@ -816,6 +527,7 @@ public class FormVentas extends javax.swing.JPanel {
         btnFactura.setBorderPainted(false);
         btnFactura.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnFactura.setFocusPainted(false);
+        btnFactura.addActionListener(this::btnFacturaActionPerformed);
         panelNorte.add(btnFactura, new org.netbeans.lib.awtextra.AbsoluteConstraints(675, 75, 180, 35));
 
         jPanel1.add(panelNorte, java.awt.BorderLayout.NORTH);
@@ -909,6 +621,7 @@ public class FormVentas extends javax.swing.JPanel {
         cboProducto.setBackground(new java.awt.Color(15, 23, 42));
         cboProducto.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         cboProducto.setForeground(new java.awt.Color(243, 244, 246));
+        cboProducto.addActionListener(this::cboProductoActionPerformed);
         panelForm.add(cboProducto, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 115, 300, 35));
 
         lblCantidad.setForeground(new java.awt.Color(156, 163, 175));
@@ -936,11 +649,13 @@ public class FormVentas extends javax.swing.JPanel {
         btnAgregar.setBorderPainted(false);
         btnAgregar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnAgregar.setFocusPainted(false);
+        btnAgregar.addActionListener(this::btnAgregarActionPerformed);
         panelForm.add(btnAgregar, new org.netbeans.lib.awtextra.AbsoluteConstraints(600, 115, 110, 35));
 
         btnQuitar.setBackground(new java.awt.Color(51, 65, 85));
         btnQuitar.setForeground(new java.awt.Color(243, 244, 246));
         btnQuitar.setText("Quitar fila");
+        btnQuitar.addActionListener(this::btnQuitarActionPerformed);
         panelForm.add(btnQuitar, new org.netbeans.lib.awtextra.AbsoluteConstraints(720, 115, 110, 35));
 
         tblDetalle.setBackground(new java.awt.Color(30, 41, 59));
@@ -973,11 +688,13 @@ public class FormVentas extends javax.swing.JPanel {
         btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnGuardar.setForeground(new java.awt.Color(255, 255, 255));
         btnGuardar.setText("Guardar venta");
+        btnGuardar.addActionListener(this::btnGuardarActionPerformed);
         panelForm.add(btnGuardar, new org.netbeans.lib.awtextra.AbsoluteConstraints(705, 215, 150, 40));
 
         btnLimpiar.setBackground(new java.awt.Color(51, 65, 85));
         btnLimpiar.setForeground(new java.awt.Color(243, 244, 246));
         btnLimpiar.setText("Limpiar");
+        btnLimpiar.addActionListener(this::btnLimpiarActionPerformed);
         panelForm.add(btnLimpiar, new org.netbeans.lib.awtextra.AbsoluteConstraints(865, 215, 130, 40));
 
         jPanel1.add(panelForm, java.awt.BorderLayout.SOUTH);
@@ -993,6 +710,46 @@ public class FormVentas extends javax.swing.JPanel {
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 644, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void txtBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_txtBuscarActionPerformed
+
+    private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
+        buscar();
+    }//GEN-LAST:event_btnBuscarActionPerformed
+
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void btnTicketActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTicketActionPerformed
+        imprimirTicket();
+    }//GEN-LAST:event_btnTicketActionPerformed
+
+    private void btnFacturaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFacturaActionPerformed
+        imprimirFactura();
+    }//GEN-LAST:event_btnFacturaActionPerformed
+
+    private void cboProductoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cboProductoActionPerformed
+        productoCambiado();
+    }//GEN-LAST:event_cboProductoActionPerformed
+
+    private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
+        agregar();
+    }//GEN-LAST:event_btnAgregarActionPerformed
+
+    private void btnQuitarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnQuitarActionPerformed
+        quitarFila();
+    }//GEN-LAST:event_btnQuitarActionPerformed
+
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        guardar();
+    }//GEN-LAST:event_btnGuardarActionPerformed
+
+    private void btnLimpiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimpiarActionPerformed
+        limpiar();
+    }//GEN-LAST:event_btnLimpiarActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
