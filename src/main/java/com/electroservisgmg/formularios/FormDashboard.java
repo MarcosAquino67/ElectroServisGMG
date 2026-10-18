@@ -4,9 +4,7 @@
  */
 package com.electroservisgmg.formularios;
 
-import com.electroservisgmg.clases.Producto;
-import com.electroservisgmg.metodos.OrdenServicioMetodos;
-import com.electroservisgmg.metodos.ProductoMetodos;
+import com.electroservisgmg.metodos.DashboardMetodos;
 
 /**
  *
@@ -21,7 +19,8 @@ public class FormDashboard extends javax.swing.JPanel {
     initComponents();
     ponerIconos();
     separarCards();
-    cargarDashboard();
+    new DashboardMetodos().cargar(lblNumIngresados, lblNumARetirar, lblNumTerminados,
+            lblNumStock, lblTxtStock, tblStock);
 }
 
 /** Espaciado entre ícono / número / texto de cada card (fuera del GEN). */
@@ -61,62 +60,6 @@ private static javax.swing.ImageIcon icono(String ruta) {
     } catch (Exception e) {
         return null;
     }
-}
-
-private void cargarDashboard() {
-    OrdenServicioMetodos om = new OrdenServicioMetodos();
-    ProductoMetodos pm = new ProductoMetodos();
-    
-    lblNumIngresados.setText(String.valueOf(
-        om.contarPorEstado("PENDIENTE") + om.contarPorEstado("EN_PROCESO")));
-    lblNumARetirar.setText(String.valueOf(om.contarPorEstado("COMPLETADO")));
-    lblNumTerminados.setText(String.valueOf(om.contarPorEstado("ENTREGADO")));
-    
-    java.util.List<Producto> prods = pm.listar();
-    int stockTotal = 0;
-    String[] cols = {"ID", "Nombre", "Stock", "Mín.", "Precio", "Descripción"};
-    Object[][] data = new Object[prods.size()][6];
-    for (int i = 0; i < prods.size(); i++) {
-        Producto p = prods.get(i);
-        stockTotal += p.getStock();
-        data[i] = new Object[]{p.getIdProducto(), p.getNombre(), p.getStock(),
-            p.getStockMinimo() > 0 ? p.getStockMinimo() : "",
-            UiTheme.gs(p.getPrecioVenta()), p.getDescripcion()};
-    }
-    lblNumStock.setText(String.valueOf(stockTotal));
-    tblStock.setModel(new javax.swing.table.DefaultTableModel(data, cols) {
-        public boolean isCellEditable(int r, int c) { return false; }
-    });
-    UiTheme.styleTable(tblStock);
-
-    // aviso de reposicion: cuantos productos llegaron al minimo
-    java.util.List<Producto> bajos = pm.listarBajoMinimo();
-    if (bajos.isEmpty()) {
-        lblTxtStock.setText("Stock Total");
-        lblTxtStock.setForeground(UiTheme.MUTED);
-        lblTxtStock.setToolTipText(null);
-    } else {
-        lblTxtStock.setText("Stock Total · " + bajos.size() + "!");
-        lblTxtStock.setForeground(UiTheme.DANGER);
-        StringBuilder sb = new StringBuilder("<html><b>Hay que reponer:</b>");
-        for (Producto p : bajos) sb.append("<br>· ").append(p.getNombre())
-                .append("  (stock ").append(p.getStock()).append(", mín. ").append(p.getStockMinimo()).append(")");
-        lblTxtStock.setToolTipText(sb.append("</html>").toString());
-    }
-    // en la lista, los que estan bajo el minimo se ven en rojo
-    tblStock.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
-        @Override public java.awt.Component getTableCellRendererComponent(javax.swing.JTable t, Object val,
-                boolean sel, boolean foc, int row, int col) {
-            java.awt.Component c = super.getTableCellRendererComponent(t, val, sel, foc, row, col);
-            if (!sel) {
-                int id = ((Number) t.getValueAt(row, 0)).intValue();
-                boolean bajo = false;
-                for (Producto p : bajos) if (p.getIdProducto() == id) { bajo = true; break; }
-                c.setForeground(bajo ? UiTheme.DANGER : t.getForeground());
-            }
-            return c;
-        }
-    });
 }
 
     /**
