@@ -134,6 +134,7 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
         panelContenedor = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("ElectroServis G.M.G. - Panel");
 
         jPanel1.setBackground(new java.awt.Color(18, 24, 36));
         jPanel1.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
