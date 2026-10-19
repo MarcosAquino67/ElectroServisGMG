@@ -154,7 +154,7 @@ Si no querés armarlo a mano, el proyecto trae un **instalador para Windows** qu
 1. Pide la **contraseña del `root` de MySQL** (por defecto `2307`) y, opcionalmente, la carpeta de instalación.
 2. Instala en **`%LOCALAPPDATA%\ElectroServisGMG`** (no necesita permisos de administrador).
 3. Crea los accesos directos en el **Menú Inicio** y en el **Escritorio**, con el ícono del logo del negocio.
-4. Busca MySQL y **crea la base** (`electroservis_app`) corriendo el script `sql/crear_bd_app.sql`: crea las 15 tablas, carga el usuario administrador, los datos del emisor (factura/ticket) y la caja inicial. Si no encuentra MySQL, avisa.
+4. Busca MySQL y **crea la base** (`electroservis_app`) corriendo el script `sql/crear_bd_instalador.sql`: crea las 15 tablas y carga solo lo mínimo para arrancar (usuario administrador, datos del emisor y la caja inicial). **La instalación queda vacía de movimiento** (sin productos, clientes, ventas, compras ni órdenes). Si no encuentra MySQL, avisa.
 5. Escribe un archivo **`conexion.properties`** al lado del ejecutable con la clave que se le indicó, para que el sistema se conecte sin tocar el código.
 6. Deja un **desinstalador** normal (Aparece y Funciones de Windows). Al desinstalar **no borra la base** ni la carpeta `respaldos/` (queda por si querés volver a instalar); sí quita los accesos directos y el resto del programa.
 
@@ -204,6 +204,7 @@ ElectroServisGMG/
 ├── MANUAL_DE_USUARIO.md         → manual paso a paso para usar el sistema
 ├── sql/                         → scripts de base de datos
 │   ├── crear_bd_app.sql             (crea la base y las tablas)
+│   ├── crear_bd_instalador.sql      (igual, versión limpia: la usa el instalador)
 │   ├── insertar_usuario.sql         (usuario administrador inicial)
 │   ├── datos_empresa_real.sql       (datos del emisor para factura/ticket)
 │   ├── actualizar_factura_electronica.sql
