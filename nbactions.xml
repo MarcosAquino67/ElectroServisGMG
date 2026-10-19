@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Configuracion de la accion "Run" (F6) para NetBeans.
+
+    Sin este archivo, NetBeans arma el comando con ${packageClassName}, que es
+    la clase que este seleccionada en el arbol de proyectos. Si esta el
+    proyecto seleccionado (o ninguna clase), ese valor queda sin reemplazar y
+    el Run falla con:
+        ClassNotFoundException: ${packageClassName}
+
+    Aca la clase principal queda fija, asi F6 funciona siempre.
+-->
+<actions>
+    <action>
+        <actionName>run</actionName>
+        <packagings>
+            <packaging>jar</packaging>
+        </packagings>
+        <goals>
+            <goal>process-classes</goal>
+            <goal>org.codehaus.mojo:exec-maven-plugin:3.5.1:exec</goal>
+        </goals>
+        <properties>
+            <exec.vmArgs></exec.vmArgs>
+            <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
+            <exec.appArgs></exec.appArgs>
+            <exec.mainClass>com.electroservisgmg.ElectroServisGMG</exec.mainClass>
+            <exec.executable>java</exec.executable>
+        </properties>
+    </action>
+</actions>
