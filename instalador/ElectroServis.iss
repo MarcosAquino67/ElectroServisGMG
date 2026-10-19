@@ -24,7 +24,7 @@
 #define MiNombre  "ElectroServis G.M.G."
 #define MiCarpeta "ElectroServisGMG"
 #define MiExe     "ElectroServisGMG.exe"
-#define MiVersion "1.1"
+#define MiVersion "1.2"
 
 [Setup]
 AppId={{9E2C41B7-6A54-4F0D-B3E8-1C7A8D2F5B90}

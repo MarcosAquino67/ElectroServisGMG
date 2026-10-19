@@ -55,7 +55,7 @@ try {
         --main-jar $jar.Name `
         --main-class 'com.electroservisgmg.ElectroServisGMG' `
         --icon (Join-Path $inst 'electroservis.ico') `
-        --app-version '1.1' `
+        --app-version '1.2' `
         --vendor 'ElectroServis G.M.G.' `
         --description 'Sistema de gestion para taller de servicio tecnico y venta de equipos' `
         --copyright 'ElectroServis G.M.G. - 3ro BTI 2026' `
