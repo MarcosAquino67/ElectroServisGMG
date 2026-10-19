@@ -48,9 +48,9 @@ Name: "desktopicon"; Description: "Crear un acceso directo en el Escritorio"; Gr
 ; Todo el ejecutable autocontenido (lleva su propio Java adentro).
 Source: "..\dist\{#MiCarpeta}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 ; El script que crea la base de datos.
-Source: "..\sql\crear_bd_app.sql"; DestDir: "{app}\sql"; Flags: ignoreversion
-; Fotos de productos de ejemplo, si hay.
-Source: "..\imagenes_productos\*"; DestDir: "{app}\imagenes_productos"; Flags: recursesubdirs createallsubdirs ignoreversion skipifsourcedoesntexist
+; Es la version LIMPIA para el instalador: estructura + usuario admin + emisor,
+; sin productos, clientes, ventas, compras ni ordenes.
+Source: "..\sql\crear_bd_instalador.sql"; DestDir: "{app}\sql"; Flags: ignoreversion
 
 [Dirs]
 Name: "{app}\imagenes_productos"
@@ -173,7 +173,7 @@ begin
   end;
   Log('mysql.exe = ' + mysql);
 
-  script := ExpandConstant('{app}\sql\crear_bd_app.sql');
+  script := ExpandConstant('{app}\sql\crear_bd_instalador.sql');
   StringChangeEx(script, '\', '/', True);
 
   { La clave va en un archivo aparte para no pasarla por la linea de comandos. }
