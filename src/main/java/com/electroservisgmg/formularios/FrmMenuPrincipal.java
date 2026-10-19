@@ -39,6 +39,13 @@ public class FrmMenuPrincipal extends javax.swing.JFrame {
                 lblFecha.setBounds(panelHeader.getWidth() - 340, 10, 320, 30);
             }
         });
+        // Respaldo automatico al cerrar (fuera del GEN: el disenador no guarda
+        // WindowListeners). Solo respalda y avisa si hay un usuario logueado.
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosing(java.awt.event.WindowEvent e) {
+                new com.electroservisgmg.metodos.RespaldoMetodos().respaldarAlCerrar(FrmMenuPrincipal.this);
+            }
+        });
         actualizarFechaHora();
         new javax.swing.Timer(1000, e -> actualizarFechaHora()).start();
     }

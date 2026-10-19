@@ -1,5 +1,6 @@
 package com.electroservisgmg.metodos;
 
+import com.electroservisgmg.clases.Sesion;
 import com.electroservisgmg.conexion.Conexion;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -58,6 +59,27 @@ public class RespaldoMetodos {
             if (nuevo == null || f.lastModified() > nuevo.lastModified()) nuevo = f;
         }
         return nuevo;
+    }
+
+    /** Cuantos respaldos automaticos se conservan; los mas viejos se borran. */
+    public static final int RESPALDOS_A_CONSERVAR = 10;
+
+    /**
+     * Borra los respaldos mas viejos de la carpeta y deja solo los ultimos
+     * {@code mantener} archivos .sql (por fecha de modificacion). Nunca borra el
+     * que se acaba de crear, porque es el mas nuevo.
+     *
+     * @return cuantos archivos borro
+     */
+    public static int limpiarViejos(int mantener) {
+        File[] archivos = carpetaRespaldos().listFiles((dir, nombre) -> nombre.toLowerCase().endsWith(".sql"));
+        if (archivos == null || archivos.length <= mantener) return 0;
+        java.util.Arrays.sort(archivos, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+        int borrados = 0;
+        for (int i = Math.max(mantener, 0); i < archivos.length; i++) {
+            if (archivos[i].delete()) borrados++;
+        }
+        return borrados;
     }
 
     /**
@@ -133,6 +155,33 @@ public class RespaldoMetodos {
             throw new Exception("No se pudo leer la base: " + e.getMessage(), e);
         }
         return destino;
+    }
+
+    /**
+     * Respaldo automatico que corre al cerrar el sistema. Solo hace algo si hay
+     * un usuario logueado: en ese caso guarda una copia con fecha y hora en la
+     * carpeta de respaldos, deja solo los ultimos {@link #RESPALDOS_A_CONSERVAR}
+     * y avisa con el resultado. Si no hay sesion no respalda ni muestra nada.
+     *
+     * @param dueno ventana sobre la que se muestra el aviso (puede ser null)
+     * @return true si guardo el respaldo
+     */
+    public boolean respaldarAlCerrar(java.awt.Window dueno) {
+        if (Sesion.getUsuario() == null) return false;
+        File destino = new File(carpetaRespaldos(), nombreSugerido());
+        try {
+            respaldar(destino);
+            limpiarViejos(RESPALDOS_A_CONSERVAR);
+        } catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(dueno,
+                    "No se pudo guardar el respaldo automático:\n" + e.getMessage(),
+                    "Respaldo", javax.swing.JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        javax.swing.JOptionPane.showMessageDialog(dueno,
+                "Respaldo automático guardado en:\n" + destino.getAbsolutePath()
+                + "\n(" + ultimasTablas + " tablas)");
+        return true;
     }
 
     // ==================== restaurar ====================
