@@ -9,3 +9,10 @@ nbproject/private/
 *.log
 .DS_Store
 Thumbs.db
+
+# Empaquetado / instalador (se regeneran con instalador\build-instalador.ps1)
+dist/
+instalador/build/
+instalador/Output/
+instalador/electroservis.ico
+conexion.properties
