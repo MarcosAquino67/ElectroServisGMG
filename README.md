@@ -54,6 +54,7 @@ Un taller de informática normalmente anota todo en cuaderno: qué equipo entró
 - **Aviso de reposición (stock mínimo)**: a cada producto se le puede cargar la cantidad a la que hay que reponer. Los que llegan a ese mínimo se ven **en rojo** en el inventario y en el panel principal, que además muestra cuántos productos hay que reponer.
 - **Repuestos en las órdenes de servicio**: en *Órdenes de servicio* el botón **Repuestos usados** deja cargar qué productos del stock se usaron en la reparación. Al agregarlos se **descuenta el stock** y el precio se **suma al costo** de la orden (y al quitarlos, se devuelve al stock y se resta del costo).
 - **Respaldo y restauración**: desde *Ajustes* se guarda toda la base en un archivo **`.sql`** (sin necesitar `mysqldump`) y se puede volver a cargar un respaldo anterior. La restauración va en una transacción: si algo falla, no se cambia nada.
+- **Respaldo automático al cerrar**: si hay una sesión abierta y se cierra el sistema, guarda solo un respaldo de la base en `respaldos/` (con la fecha y hora en el nombre) y muestra un aviso con la ruta del archivo. Para no llenar la carpeta, **conserva solo los 10 respaldos más nuevos** (sean automáticos o manuales) y borra los demás.
 - **Contraseñas con hash**: las claves no se guardan en texto plano sino como **SHA-256**. Las claves viejas se siguen aceptando y se convierten solas a hash la primera vez que ese usuario inicia sesión.
 - **Permisos por rol**: hay dos roles, `ADMINISTRADOR` y `USUARIO`. Las pantallas de **Usuarios** y **Ajustes** quedan deshabilitadas para los usuarios comunes (y un administrador no puede sacarse el rol ni borrarse a sí mismo).
 - **Controles de duplicados**: no deja cargar dos clientes con la misma cédula ni dos proveedores con el mismo RUC (comparando sin puntos ni guiones).
@@ -142,6 +143,43 @@ mvn compile exec:java -Dexec.mainClass=com.electroservisgmg.ElectroServisGMG
 
 ---
 
+## 💾 Instalación con el instalador (.exe)
+
+Si no querés armarlo a mano, el proyecto trae un **instalador para Windows** que deja todo listo de una sola vez: copia el sistema (con su propio Java adentro, no hace falta tener JDK), crea los accesos directos y **arma la base de datos sola**.
+
+**Archivo:** `instalador/Output/ElectroServisGMG-Setup.exe`
+
+**Qué hace al ejecutarlo:**
+
+1. Pide la **contraseña del `root` de MySQL** (por defecto `2307`) y, opcionalmente, la carpeta de instalación.
+2. Instala en **`%LOCALAPPDATA%\ElectroServisGMG`** (no necesita permisos de administrador).
+3. Crea los accesos directos en el **Menú Inicio** y en el **Escritorio**, con el ícono del logo del negocio.
+4. Busca MySQL y **crea la base** (`electroservis_app`) corriendo el script `sql/crear_bd_app.sql`: crea las 15 tablas, carga el usuario administrador, los datos del emisor (factura/ticket) y la caja inicial. Si no encuentra MySQL, avisa.
+5. Escribe un archivo **`conexion.properties`** al lado del ejecutable con la clave que se le indicó, para que el sistema se conecte sin tocar el código.
+6. Deja un **desinstalador** normal (Aparece y Funciones de Windows). Al desinstalar **no borra la base** ni la carpeta `respaldos/` (queda por si querés volver a instalar); sí quita los accesos directos y el resto del programa.
+
+**Requisito:** tener **MySQL Server 8** instalado (el instalador no trae el servidor; solo crea y carga la base).
+
+### Cómo se genera (para el equipo)
+
+Los scripts para armarlo están en `instalador/` y necesitan **jpackage** (viene en el JDK 17) + **Inno Setup 6**:
+
+```powershell
+# 0) si no tenes Inno Setup, instalalo (una sola vez)
+winget install JRSoftware.InnoSetup
+
+# 1) compila, arma el ícono y el ejecutable autocontenido con jpackage
+powershell -ExecutionPolicy Bypass -File instalador\build-instalador.ps1
+
+# 2) compila el instalador con Inno Setup
+#    (ISCC.exe queda en "%LOCALAPPDATA%\Programs\Inno Setup 6" o en "C:\Program Files (x86)\Inno Setup 6")
+& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" instalador\ElectroServis.iss
+```
+
+El resultado queda en `instalador\Output\ElectroServisGMG-Setup.exe`.
+
+---
+
 ## 🔑 Usuario de prueba
 
 | Usuario | Contraseña | Rol |
@@ -175,6 +213,7 @@ ElectroServisGMG/
 │   └── actualizar_repuestos_orden.sql   (repuestos usados en una orden)
 ├── imagenes_productos/          → fotos de los productos de ejemplo
 ├── respaldos/                   → carpetas de respaldos .sql (no va a git)
+├── instalador/                  → scripts para armar el instalador .exe (jpackage + Inno Setup)
 └── src/main/
     ├── java/com/electroservisgmg/
     │   ├── ElectroServisGMG.java    → main (arranca el login)
@@ -272,7 +311,7 @@ Y el diseño se cambia en la pestaña **Design** del `.form`, no escribiendo coo
 
 Cosas que quedaron para más adelante (sirven para seguir practicando):
 
-1. **El usuario y la contraseña de MySQL están escritos en el código** (`Conexion.java`). Lo ideal sería un archivo de configuración aparte (o variables de entorno).
+1. **La conexión a MySQL sale de un archivo `conexion.properties`** que está al lado del ejecutable (así lo escribe el instalador con la clave que le pusiste). Si el archivo no existe, `Conexion.java` usa `root` / `2307` como valor por defecto (el de la PC de la escuela).
 2. **El respaldo guarda los datos, no la estructura**: alcanza para volver atrás en un sistema ya instalado (restaura sobre las mismas tablas). Para armar la base desde cero se usa `crear_bd_app.sql`.
 3. **La factura electrónica no está conectada a SIFEN/ekuatía**: imprime el formato con un CDC generado internamente, pero no se envía ni se firma digitalmente.
 4. **La tabla `cliente` no tiene columna `RUC`**: la factura usa la cédula del cliente. **La consulta de RUC por internet** (para autocompletar el nombre desde el RUC) quedó sin implementar.
