@@ -90,6 +90,7 @@ public class FrmLogin extends javax.swing.JFrame {
         btnIngresar = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("ElectroServis G.M.G.");
 
         jPanel1.setBackground(new java.awt.Color(18, 24, 36));
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());

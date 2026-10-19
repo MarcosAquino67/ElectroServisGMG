@@ -118,7 +118,17 @@ mysql -u root -p electroservis_app < sql/actualizar_repuestos_orden.sql
 
 ### 3) Configurar la conexión
 
-En `src/main/java/com/electroservisgmg/conexion/Conexion.java` hay que poner **tu** usuario y contraseña de MySQL:
+La forma recomendada es dejar un archivo **`conexion.properties`** en la carpeta desde donde corre el sistema (el instalador lo escribe solo):
+
+```properties
+host=localhost
+puerto=3306
+base=electroservis_app
+usuario=root
+clave=tu_contraseña
+```
+
+Si ese archivo no existe, se usan los valores de `src/main/java/com/electroservisgmg/conexion/Conexion.java`:
 
 ```java
 private static final String URL  = "jdbc:mysql://localhost:3306/electroservis_app?...";
@@ -145,20 +155,77 @@ mvn compile exec:java -Dexec.mainClass=com.electroservisgmg.ElectroServisGMG
 
 ## 💾 Instalación con el instalador (.exe)
 
-Si no querés armarlo a mano, el proyecto trae un **instalador para Windows** que deja todo listo de una sola vez: copia el sistema (con su propio Java adentro, no hace falta tener JDK), crea los accesos directos y **arma la base de datos sola**.
+Si no querés armarlo a mano, el proyecto trae un **instalador para Windows** que deja todo listo de una sola vez: copia el sistema (con su propio Java adentro, no hace falta tener JDK), crea los accesos directos, **arma la base de datos sola** y **crea el usuario con el que se entra al sistema**.
 
 **Archivo:** `instalador/Output/ElectroServisGMG-Setup.exe`
 
-**Qué hace al ejecutarlo:**
+### Qué pide (2 pantallas)
 
-1. Pide la **contraseña del `root` de MySQL** (por defecto `2307`) y, opcionalmente, la carpeta de instalación.
-2. Instala en **`%LOCALAPPDATA%\ElectroServisGMG`** (no necesita permisos de administrador).
-3. Crea los accesos directos en el **Menú Inicio** y en el **Escritorio**, con el ícono del logo del negocio.
-4. Busca MySQL y **crea la base** (`electroservis_app`) corriendo el script `sql/crear_bd_instalador.sql`: crea las 15 tablas y carga solo lo mínimo para arrancar (usuario administrador, datos del emisor y la caja inicial). **La instalación queda vacía de movimiento** (sin productos, clientes, ventas, compras ni órdenes). Si no encuentra MySQL, avisa.
-5. Escribe un archivo **`conexion.properties`** al lado del ejecutable con la clave que se le indicó, para que el sistema se conecte sin tocar el código.
-6. Deja un **desinstalador** normal (Aparece y Funciones de Windows). Al desinstalar **no borra la base** ni la carpeta `respaldos/` (queda por si querés volver a instalar); sí quita los accesos directos y el resto del programa.
+**1) Base de datos MySQL** — los datos del MySQL de esa PC:
+
+| Campo | Para qué sirve |
+|---|---|
+| Usuario de MySQL | el usuario administrador de MySQL (normalmente `root`) |
+| Contraseña de MySQL | la de ese usuario |
+| Servidor | normalmente `localhost` (si la base está en otra PC, va su IP) |
+| Puerto | normalmente `3306` |
+| Programa `mysql.exe` | se **detecta solo** (MySQL, MariaDB, XAMPP o WAMP); con **Buscar...** se elige a mano |
+
+Al apretar *Siguiente* el instalador **prueba la conexión** y, si falla, muestra el **error real de MySQL** (por ejemplo `ERROR 1045 ... Access denied`) junto con la pista de qué revisar. Se pueden corregir los datos y volver a probar **sin reinstalar nada**; si se decide seguir igual, el sistema se instala y la base se crea después con el acceso *Crear o reparar la base de datos*.
+
+**2) Usuario del sistema** — el usuario con el que se va a entrar:
+
+| Campo | Ejemplo |
+|---|---|
+| Nombre y apellido | `Marcos Aquino` |
+| Nombre de usuario | `marcos` |
+| Contraseña (mínimo 4 caracteres) | `····` |
+| Rol | `ADMINISTRADOR` (entra a todo) o `USUARIO` (no ve *Usuarios* ni *Ajustes*) |
+
+La contraseña se guarda **con hash SHA-256** en la base (nunca en texto plano), igual que las que se cargan desde el sistema.
+
+### Qué hace al ejecutarlo
+
+1. Instala en **`%LOCALAPPDATA%\ElectroServisGMG`** (no necesita permisos de administrador).
+2. Crea los accesos directos en el **Menú Inicio** y en el **Escritorio** con el ícono del logo del negocio, más un acceso **Crear o reparar la base de datos**.
+3. Busca MySQL y **crea la base** (`electroservis_app`) corriendo el script `sql/crear_bd_instalador.sql`: crea las 15 tablas y carga solo lo mínimo para arrancar (datos del emisor, la caja inicial y el **usuario de rescate** `Marcos / 2307`). **La instalación queda vacía de movimiento** (sin productos, clientes, ventas, compras ni órdenes).
+4. Crea el **usuario del sistema** que se cargó en la pantalla 2 (y lo deja guardado en `sql/usuario_sistema.sql` para poder reponerlo después).
+5. Escribe **`conexion.properties`** al lado del ejecutable (servidor, puerto, base, usuario y clave de MySQL) para que el sistema se conecte sin tocar el código. Se escribe **siempre**, aunque la base no se haya podido crear.
+6. Si la base no se pudo crear, **no abre el sistema**: avisa que primero hay que crearla con el acceso *Crear o reparar la base de datos*.
+7. Deja un **desinstalador** normal (Aparece y Funciones de Windows). Al desinstalar **no borra la base** ni la carpeta `respaldos/` (queda por si querés volver a instalar); sí quita los accesos directos y el resto del programa.
 
 **Requisito:** tener **MySQL Server 8** instalado (el instalador no trae el servidor; solo crea y carga la base).
+
+### 🔧 Si la base no se creó: "Crear o reparar la base de datos"
+
+El instalador deja en el Menú Inicio el acceso **Crear o reparar la base de datos** (es el archivo `CrearBaseDeDatos.bat` de la carpeta del programa). Vuelve a crear la base **sin reinstalar el sistema**: toma los datos de `conexion.properties`, usa el mismo script `sql/crear_bd_instalador.sql` y vuelve a cargar el usuario del sistema guardado en `sql/usuario_sistema.sql`. **No borra nada** de lo que ya esté cargado: solo crea lo que falte.
+
+Se usa cuando:
+
+- el instalador avisó que no pudo conectar a MySQL;
+- el servicio de MySQL estaba detenido y se inició después;
+- se reinstaló MySQL o cambió su contraseña (en ese caso hay que corregir la clave en `conexion.properties` o reinstalar el sistema).
+
+### ❗ Errores típicos de MySQL
+
+| Error | Qué significa | Qué hacer |
+|---|---|---|
+| `1045 Access denied` | el usuario o la contraseña de MySQL no son correctos | revisar usuario y contraseña (probá `mysql -u root -p` en una consola) |
+| `2003 Can't connect` | el servidor MySQL no está atendiendo | iniciar el servicio: **Servicios de Windows** (`services.msc`) → `MySQL80` → *Iniciar*; o `net start MySQL80` en una consola **como administrador**. Revisar también el puerto |
+| `2059 Authentication plugin` | el cliente `mysql.exe` es más viejo que el servidor | usar **Buscar...** y elegir el `mysql.exe` de la versión que está instalada |
+| `1049 Unknown database` | todavía no existe `electroservis_app` | usar *Crear o reparar la base de datos* |
+
+### Instalación desatendida (opcional)
+
+Para instalar sin pantallas (por ejemplo en varias PC) los datos se pasan por parámetros:
+
+```bat
+ElectroServisGMG-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES ^
+    /mysqlusuario=root /mysqlclave=2307 /mysqlhost=localhost /mysqlpuerto=3306 ^
+    /sisnombre="Marcos Aquino" /sisusuario=marcos /sisclave=1234 /sisrol=ADMINISTRADOR
+```
+
+Si no se pasa `/sisclave` (la contraseña del usuario del sistema), la base se crea igual y se entra con el usuario de rescate `Marcos / 2307`.
 
 ### Cómo se genera (para el equipo)
 
@@ -178,6 +245,15 @@ powershell -ExecutionPolicy Bypass -File instalador\build-instalador.ps1
 
 El resultado queda en `instalador\Output\ElectroServisGMG-Setup.exe`.
 
+Los archivos del instalador son:
+
+| Archivo | Qué es |
+|---|---|
+| `build-instalador.ps1` | compila con Maven, genera el `.ico` y arma el ejecutable autocontenido (con su Java adentro) en `dist\` |
+| `ElectroServis.iss` | el instalador de Inno Setup: las 2 pantallas (MySQL y usuario del sistema), la prueba de conexión, la creación de la base y los accesos directos |
+| `GenerarIcono.java` | pasa el logo (`logo_empresa.jpg`) a `.ico` (hecho a mano, sin librerías) |
+| `CrearBaseDeDatos.bat` | el acceso **Crear o reparar la base de datos** que queda instalado |
+
 ---
 
 ## 🔑 Usuario de prueba
@@ -185,6 +261,8 @@ El resultado queda en `instalador\Output\ElectroServisGMG-Setup.exe`.
 | Usuario | Contraseña | Rol |
 |---|---|---|
 | `Marcos` | `2307` | ADMINISTRADOR |
+
+`Marcos` es el **usuario de rescate**: el script de la base lo crea siempre, así nunca se queda nadie afuera por olvidarse la contraseña. Al instalar con el instalador se elige **además** el usuario con el que se entra (pantalla *Usuario del sistema*), y desde el sistema se cargan todos los que hagan falta.
 
 ### Roles
 
@@ -215,6 +293,10 @@ ElectroServisGMG/
 ├── imagenes_productos/          → fotos de los productos de ejemplo
 ├── respaldos/                   → carpetas de respaldos .sql (no va a git)
 ├── instalador/                  → scripts para armar el instalador .exe (jpackage + Inno Setup)
+│   ├── build-instalador.ps1         (compila y arma el ejecutable autocontenido)
+│   ├── ElectroServis.iss            (el instalador: pantallas de MySQL y del usuario)
+│   ├── GenerarIcono.java            (pasa el logo a .ico, sin librerías externas)
+│   └── CrearBaseDeDatos.bat         (acceso "Crear o reparar la base de datos")
 └── src/main/
     ├── java/com/electroservisgmg/
     │   ├── ElectroServisGMG.java    → main (arranca el login)
@@ -312,13 +394,14 @@ Y el diseño se cambia en la pestaña **Design** del `.form`, no escribiendo coo
 
 Cosas que quedaron para más adelante (sirven para seguir practicando):
 
-1. **La conexión a MySQL sale de un archivo `conexion.properties`** que está al lado del ejecutable (así lo escribe el instalador con la clave que le pusiste). Si el archivo no existe, `Conexion.java` usa `root` / `2307` como valor por defecto (el de la PC de la escuela).
-2. **El respaldo guarda los datos, no la estructura**: alcanza para volver atrás en un sistema ya instalado (restaura sobre las mismas tablas). Para armar la base desde cero se usa `crear_bd_app.sql`.
-3. **La factura electrónica no está conectada a SIFEN/ekuatía**: imprime el formato con un CDC generado internamente, pero no se envía ni se firma digitalmente.
-4. **La tabla `cliente` no tiene columna `RUC`**: la factura usa la cédula del cliente. **La consulta de RUC por internet** (para autocompletar el nombre desde el RUC) quedó sin implementar.
-5. **El lector de código de barras está en Ventas y Compras**: en las otras pantallas el código se carga a mano.
-6. **El vuelto no se guarda en la base**: la ventana de vuelto es una calculadora (la venta guarda el total y la forma de pago).
-7. Los formularios usan posiciones fijas (AbsoluteLayout), así que la ventana no se adapta sola si se achica mucho (las pantallas están pensadas para 1100 × 700 aprox.).
+1. **La conexión a MySQL sale de un archivo `conexion.properties`** que está al lado del ejecutable (así lo escribe el instalador, con la clave, el servidor y el puerto que le pusiste). Si el archivo no existe, `Conexion.java` usa `localhost` / `3306` / `root` / `2307` como valores por defecto (el de la PC de la escuela). Si cambiás la contraseña de MySQL hay que editar ese archivo (o reinstalar).
+2. **El instalador crea la base, pero no instala MySQL**: en la PC tiene que estar **MySQL Server 8** (el propio instalador avisa si no lo encuentra). Si la base no se creó, se arregla desde el acceso *Crear o reparar la base de datos* sin reinstalar el sistema.
+3. **El respaldo guarda los datos, no la estructura**: alcanza para volver atrás en un sistema ya instalado (restaura sobre las mismas tablas). Para armar la base desde cero se usa `crear_bd_app.sql`.
+4. **La factura electrónica no está conectada a SIFEN/ekuatía**: imprime el formato con un CDC generado internamente, pero no se envía ni se firma digitalmente.
+5. **La tabla `cliente` no tiene columna `RUC`**: la factura usa la cédula del cliente. **La consulta de RUC por internet** (para autocompletar el nombre desde el RUC) quedó sin implementar.
+6. **El lector de código de barras está en Ventas y Compras**: en las otras pantallas el código se carga a mano.
+7. **El vuelto no se guarda en la base**: la ventana de vuelto es una calculadora (la venta guarda el total y la forma de pago).
+8. Los formularios usan posiciones fijas (AbsoluteLayout), así que la ventana no se adapta sola si se achica mucho (las pantallas están pensadas para 1100 × 700 aprox.).
 
 ---
 
